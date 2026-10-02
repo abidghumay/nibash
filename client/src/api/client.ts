@@ -1,6 +1,18 @@
-export const API_BASE_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+const rawBaseUrl = (import.meta.env.VITE_API_URL || "http://localhost:5000/api")
+  .trim()
+  .replace(/\/+$/, "");
+
+export const API_BASE_URL = rawBaseUrl.endsWith("/api")
+  ? rawBaseUrl
+  : `${rawBaseUrl}/api`;
+
 const BASE_URL = API_BASE_URL;
+
+function resolveUrl(endpoint: string): string {
+  if (endpoint.startsWith("http")) return endpoint;
+  const cleanEndpoint = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
+  return `${BASE_URL}${cleanEndpoint}`;
+}
 
 export interface ApiError {
   message: string;
@@ -22,7 +34,7 @@ async function request<T>(
     headers["Authorization"] = `Bearer ${token}`;
   }
 
-  const url = endpoint.startsWith("http") ? endpoint : `${BASE_URL}${endpoint}`;
+  const url = resolveUrl(endpoint);
 
   const response = await fetch(url, {
     ...options,
@@ -58,7 +70,7 @@ export const apiClient = {
   // TODO: Learn more
   postForm: async <T>(endpoint: string, formData: FormData): Promise<T> => {
     const token = localStorage.getItem("token");
-    const url = endpoint.startsWith("http") ? endpoint : `${BASE_URL}${endpoint}`;
+    const url = resolveUrl(endpoint);
 
     const res = await fetch(url, {
       method: "POST",
@@ -75,7 +87,7 @@ export const apiClient = {
   },
   patchForm: async <T>(endpoint: string, formData: FormData): Promise<T> => {
     const token = localStorage.getItem("token");
-    const url = endpoint.startsWith("http") ? endpoint : `${BASE_URL}${endpoint}`;
+    const url = resolveUrl(endpoint);
 
     const res = await fetch(url, {
       method: "PATCH",
