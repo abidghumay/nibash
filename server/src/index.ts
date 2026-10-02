@@ -35,6 +35,11 @@ app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/owners/me/income", incomeRoutes);
 app.use("/api/areas", areaRoutes);
 
+// root route
+app.get("/", (_req, res) => {
+  res.json({ message: "Nibash API is running", status: "ok" });
+});
+
 // health chcek
 app.get("/health", async (_req, res) => {
   try {
