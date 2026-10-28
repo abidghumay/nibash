@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 export const documentTypeEnum = z.enum([
+  "dolil_deed",
   "electricity_bill_receipt",
   "holding_tax_receipt",
   "water_bill_receipt",

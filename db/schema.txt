@@ -16,7 +16,7 @@ Amenities(id: int (PK), name: string, description: string, icon_path: string)
 
 Listing_Amenities(listing_id: int (PK, FK), amenity_id: int (PK, FK))
 
-Documents(id: int (PK), verifier_id: int (FK), listing_id: int (FK), document_type: string, is_verified: boolean, verification_type: string, uploaded_at: timestamp)
+Documents(id: int (PK), verifier_id: int (FK), listing_id: int (FK), document_type: string, is_verified: boolean, verification_type: string, uploaded_at: timestamp, ai_status: string, ai_score: int, ai_summary: text, ai_flags: jsonb, ai_extracted_data: jsonb, ai_evaluated_at: timestamp)
 
 Terms(id: int (PK), rent: numeric, electricity_bill: numeric, water_bill: numeric, service_charge: numeric, monthly_due_date: int, pet_allowed: boolean, security_deposit: numeric)
 

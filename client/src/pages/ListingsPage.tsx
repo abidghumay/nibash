@@ -38,6 +38,10 @@ export interface BackendListing {
   amenities?: { id: number; name: string; description?: string }[];
   rating?: number | string | null;
   review_count?: number | null;
+  total_docs?: number | null;
+  ai_passed_docs?: number | null;
+  ai_rejected_docs?: number | null;
+  average_ai_score?: number | null;
 }
 
 export function ListingsPage() {

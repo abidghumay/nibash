@@ -1,15 +1,92 @@
 import { pool } from "../db/pool.js";
 import { AppError } from "../errors/AppError.js";
+import type { UploadDocumentInput } from "../schemas/document.schema.js";
+import { evaluateDocumentWithGemini } from "./aiDocumentVerifier.service.js";
 import { getPublicUrl, uploadToSupabase } from "./media.service.js";
 
-type DocumentType =
-  | "electricity_bill_receipt"
-  | "holding_tax_receipt"
-  | "water_bill_receipt"
-  | "trade_license"
-  | "nid"
-  | "passport"
-  | "driving_license";
+type DocumentType = UploadDocumentInput["document_type"];
+
+type DocumentAiEvaluationJob = {
+  documentId: number;
+  listingId: string;
+  documentType: DocumentType;
+  mediaUrl: string;
+  mediaPath?: string;
+};
+
+export async function evaluateUploadedDocument({
+  documentId,
+  listingId,
+  documentType,
+  mediaUrl,
+  mediaPath,
+}: DocumentAiEvaluationJob) {
+  try {
+    const listingInfo = await pool.query(
+      `SELECT l.title, u.name AS owner_name, a.name AS area_name, a.city
+       FROM listings l
+       JOIN users u ON u.id = l.owner_id
+       LEFT JOIN areas a ON a.id = l.area_id
+       WHERE l.id = $1`,
+      [listingId],
+    );
+    const listing = listingInfo.rows[0];
+    const listingAddress = [listing?.area_name, listing?.city]
+      .filter(Boolean)
+      .join(", ");
+    const aiResult = await evaluateDocumentWithGemini({
+      documentId,
+      documentType,
+      mediaUrl,
+      ownerName: listing?.owner_name || "",
+      listingAddress,
+      listingTitle: listing?.title || "",
+    });
+
+    const values: unknown[] = [
+      aiResult.aiStatus,
+      aiResult.confidenceScore,
+      aiResult.summary,
+      JSON.stringify(aiResult.flags),
+      JSON.stringify(aiResult.extractedData),
+      documentId,
+    ];
+
+    let query = `UPDATE documents
+       SET ai_status = $1,
+           ai_score = $2,
+           ai_summary = $3,
+           ai_flags = $4::jsonb,
+           ai_extracted_data = $5::jsonb,
+           ai_evaluated_at = now()
+       WHERE id = $6`;
+
+    if (mediaPath) {
+      values.push(mediaPath);
+      query += ` AND (
+        (SELECT m.media_path FROM document_media dm JOIN media m ON m.id = dm.media_id WHERE dm.document_id = documents.id ORDER BY m.id DESC LIMIT 1) = $7
+      )`;
+    }
+
+    await pool.query(query, values);
+  } catch {
+    console.error(`AI document verification failed for document ${documentId}`);
+    try {
+      await pool.query(
+        `UPDATE documents
+         SET ai_status = 'failed',
+             ai_summary = 'AI evaluation error',
+             ai_evaluated_at = now()
+         WHERE id = $1`,
+        [documentId],
+      );
+    } catch {
+      console.error(
+        `Unable to record AI verification failure for document ${documentId}`,
+      );
+    }
+  }
+}
 
 async function assertOwnerOrVerifier(listingId: string, userId: number) {
   const listing = await pool.query(
@@ -60,7 +137,18 @@ export async function uploadListingDocument(
     if (existing.rows.length > 0) {
       documentId = existing.rows[0].id;
       await client.query(
-        "UPDATE documents SET is_verified=false, verification_type=NULL, verifier_id=NULL, uploaded_at=now() WHERE id=$1",
+        `UPDATE documents
+         SET is_verified=false,
+             verification_type=NULL,
+             verifier_id=NULL,
+             uploaded_at=now(),
+             ai_status='pending',
+             ai_score=NULL,
+             ai_summary=NULL,
+             ai_flags='[]'::jsonb,
+             ai_extracted_data='{}'::jsonb,
+             ai_evaluated_at=NULL
+         WHERE id=$1`,
         [documentId],
       );
     } else {
@@ -72,6 +160,8 @@ export async function uploadListingDocument(
     }
 
     const mediaIds: number[] = [];
+    let firstMediaUrl: string | undefined;
+    let firstMediaPath: string | undefined;
     for (const file of files) {
       const ext = file.mimetype.split("/")[1];
       const path = `documents/${listingId}/${documentType}/${Date.now()}-${crypto.randomUUID()}.${ext}`;
@@ -88,9 +178,22 @@ export async function uploadListingDocument(
         [documentId, media.rows[0].id],
       );
       mediaIds.push(media.rows[0].id);
+      firstMediaUrl ??= getPublicUrl(path);
+      firstMediaPath ??= path;
     }
 
     await client.query("COMMIT");
+    if (firstMediaUrl) {
+      queueMicrotask(() => {
+        void evaluateUploadedDocument({
+          documentId,
+          listingId,
+          documentType,
+          mediaUrl: firstMediaUrl,
+          mediaPath: firstMediaPath,
+        });
+      });
+    }
     return { documentId, mediaIds };
   } catch (err) {
     await client.query("ROLLBACK");
@@ -104,7 +207,9 @@ export async function getListingDocuments(listingId: string, userId: number) {
   await assertOwnerOrVerifier(listingId, userId);
 
   const docs = await pool.query(
-    `SELECT id, document_type, is_verified, verification_type, uploaded_at
+    `SELECT id, document_type, is_verified, verification_type, uploaded_at,
+            ai_status, ai_score, ai_summary, ai_flags, ai_extracted_data,
+            ai_evaluated_at
      FROM documents
      WHERE listing_id=$1
      ORDER BY uploaded_at DESC`,

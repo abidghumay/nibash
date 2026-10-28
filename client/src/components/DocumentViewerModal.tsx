@@ -14,6 +14,11 @@ interface DocumentViewerModalProps {
   uploadedAt?: string;
   media: DocumentMediaItem[];
   initialIndex?: number;
+  aiStatus?: "pending" | "auto_rejected" | "flagged" | "passed" | "failed" | null;
+  aiScore?: number | null;
+  aiSummary?: string | null;
+  aiFlags?: string[] | null;
+  aiExtractedData?: Record<string, any> | null;
 }
 
 export function DocumentViewerModal({
@@ -25,10 +30,16 @@ export function DocumentViewerModal({
   uploadedAt,
   media = [],
   initialIndex = 0,
+  aiStatus,
+  aiScore,
+  aiSummary,
+  aiFlags,
+  aiExtractedData,
 }: DocumentViewerModalProps) {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [zoom, setZoom] = useState(1);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showAiDetails, setShowAiDetails] = useState(true);
 
   useEffect(() => {
     setCurrentIndex(initialIndex);
@@ -128,6 +139,40 @@ export function DocumentViewerModal({
                   />
                   {isVerified ? "Verified" : "Pending"}
                 </span>
+
+                {/* AI Score Badge */}
+                {aiStatus && (
+                  <span
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium border ${
+                      aiStatus === "passed"
+                        ? "text-emerald-300 bg-emerald-950/70 border-emerald-500/40"
+                        : aiStatus === "flagged"
+                        ? "text-amber-300 bg-amber-950/70 border-amber-500/40"
+                        : aiStatus === "auto_rejected"
+                        ? "text-rose-300 bg-rose-950/70 border-rose-500/40"
+                        : "text-sky-300 bg-sky-950/70 border-sky-500/40"
+                    }`}
+                  >
+                    <span className="material-symbols-outlined text-[13px]">
+                      {aiStatus === "passed"
+                        ? "check_circle"
+                        : aiStatus === "auto_rejected"
+                        ? "cancel"
+                        : aiStatus === "flagged"
+                        ? "warning"
+                        : "psychology"}
+                    </span>
+                    <span>
+                      {aiStatus === "auto_rejected"
+                        ? `AI Auto-Rejected (${aiScore ?? 0}%)`
+                        : aiStatus === "flagged"
+                        ? `AI Flagged (${aiScore ?? 0}%)`
+                        : aiStatus === "passed"
+                        ? `AI Passed (${aiScore ?? 0}%)`
+                        : "AI Processing"}
+                    </span>
+                  </span>
+                )}
               </div>
               <div className="flex items-center gap-2.5 text-[11px] text-slate-400 mt-0.5">
                 <span className="font-mono text-[10px] text-slate-400">
@@ -223,6 +268,108 @@ export function DocumentViewerModal({
             </button>
           </div>
         </div>
+
+        {/* AI Analysis Drawer (if AI evaluation exists) */}
+        {aiStatus && (
+          <div className="bg-[#0f1218] border-b border-white/10 px-4 py-2.5 text-xs text-slate-300 flex flex-col gap-2 transition-all shrink-0">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-base text-indigo-400">
+                  psychology
+                </span>
+                <span className="font-semibold text-white tracking-wide">
+                  AI Document Overview
+                </span>
+                {aiScore !== null && aiScore !== undefined && (
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 font-mono text-slate-200">
+                    Confidence: {aiScore}/100
+                  </span>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowAiDetails((prev) => !prev)}
+                className="text-[11px] text-slate-400 hover:text-white flex items-center gap-1 transition cursor-pointer"
+              >
+                <span>{showAiDetails ? "Collapse Details" : "Show Details"}</span>
+                <span className="material-symbols-outlined text-sm">
+                  {showAiDetails ? "expand_less" : "expand_more"}
+                </span>
+              </button>
+            </div>
+
+            {showAiDetails && (
+              <div className="space-y-2 pt-1 border-t border-white/5">
+                {aiSummary && (
+                  <p className="text-slate-300 leading-relaxed bg-[#08090c] p-2.5 rounded-lg border border-white/5 text-[11px]">
+                    {aiSummary}
+                  </p>
+                )}
+
+                {aiFlags && aiFlags.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 pt-1">
+                    {aiFlags.map((flag, idx) => (
+                      <span
+                        key={idx}
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-slate-900 border border-white/10 text-[10px] text-slate-300 font-mono"
+                      >
+                        <span className="material-symbols-outlined text-[11px] text-indigo-400">
+                          info
+                        </span>
+                        {flag}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                {aiExtractedData && Object.keys(aiExtractedData).length > 0 && (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 text-[11px] bg-white/[0.02] p-2 rounded-lg">
+                    {aiExtractedData.ownerNameDetected && (
+                      <div>
+                        <span className="text-slate-500 text-[10px] block font-mono">
+                          Owner on Doc
+                        </span>
+                        <span className="text-slate-200 font-medium">
+                          {aiExtractedData.ownerNameDetected}
+                        </span>
+                      </div>
+                    )}
+                    {aiExtractedData.addressDetected && (
+                      <div>
+                        <span className="text-slate-500 text-[10px] block font-mono">
+                          Address on Doc
+                        </span>
+                        <span className="text-slate-200 font-medium line-clamp-1">
+                          {aiExtractedData.addressDetected}
+                        </span>
+                      </div>
+                    )}
+                    {aiExtractedData.documentNumber && (
+                      <div>
+                        <span className="text-slate-500 text-[10px] block font-mono">
+                          Document / Khatian #
+                        </span>
+                        <span className="text-slate-200 font-medium">
+                          {aiExtractedData.documentNumber}
+                        </span>
+                      </div>
+                    )}
+                    {aiExtractedData.issueDate && (
+                      <div>
+                        <span className="text-slate-500 text-[10px] block font-mono">
+                          Issue Date
+                        </span>
+                        <span className="text-slate-200 font-medium">
+                          {aiExtractedData.issueDate}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Modal Main Content — Maximized Viewport with Zero Padding Choke */}
         <div className="flex-1 relative overflow-hidden bg-[#07080a] flex items-center justify-center p-1 sm:p-2">

@@ -117,7 +117,17 @@ export async function getListingById(
              (SELECT COUNT(r.id)::int FROM reviews r JOIN contracts c ON c.id = r.contract_id WHERE c.listing_id = l.id) AS review_count,
              CASE WHEN $2::integer IS NULL OR l.owner_id <> $2::integer THEN u.name  END AS owner_name,
              CASE WHEN $2::integer IS NULL OR l.owner_id <> $2::integer THEN u.email END AS owner_email,
-             CASE WHEN $2::integer IS NULL OR l.owner_id <> $2::integer THEN u.phone END AS owner_phone
+             CASE
+               WHEN $2::integer IS NOT NULL
+                    AND l.owner_id <> $2::integer
+                    AND EXISTS (
+                      SELECT 1 FROM applies a
+                      WHERE a.listing_id = l.id
+                        AND a.tenant_id = $2::integer
+                        AND a.status <> 'rejected'
+                    )
+               THEN u.phone
+             END AS owner_phone
      FROM listings l
      JOIN initial_terms it ON it.listing_id = l.id
      JOIN terms t ON t.id = it.terms_id
@@ -442,10 +452,17 @@ export async function deleteListing(id: string, ownerId: number) {
 
 export async function getUnverifiedListings() {
   const result = await pool.query(
-    `SELECT l.*, t.rent FROM listings l
+    `SELECT l.*, t.rent,
+            COUNT(d.id)::int AS total_docs,
+            COUNT(*) FILTER (WHERE d.ai_status = 'passed')::int AS ai_passed_docs,
+            COUNT(*) FILTER (WHERE d.ai_status = 'auto_rejected')::int AS ai_rejected_docs,
+            AVG(d.ai_score)::float8 AS average_ai_score
+     FROM listings l
      JOIN initial_terms it ON it.listing_id = l.id
      JOIN terms t ON t.id = it.terms_id
+     LEFT JOIN documents d ON d.listing_id = l.id
      WHERE l.status='waiting'
+     GROUP BY l.id, t.rent
      ORDER BY l.id DESC`
   );
   return attachMediaToListingResults(result.rows); // reuse the helper from the earlier images work — drop this call if you haven't added it yet

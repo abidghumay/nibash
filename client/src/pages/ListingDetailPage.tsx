@@ -25,11 +25,19 @@ export interface ListingDocument {
   is_verified: boolean;
   verification_type?: string | null;
   uploaded_at: string;
+  ai_status?: "pending" | "auto_rejected" | "flagged" | "passed" | "failed" | null;
+  ai_score?: number | null;
+  ai_summary?: string | null;
+  ai_flags?: string[] | null;
+  ai_extracted_data?: Record<string, any> | null;
+  ai_evaluated_at?: string | null;
   media: { id: number; url: string }[];
 }
 
 function formatDocumentType(type: string): string {
   switch (type) {
+    case "dolil_deed":
+      return "Land Deed (Dolil)";
     case "electricity_bill_receipt":
       return "Electricity Bill Receipt";
     case "holding_tax_receipt":
@@ -253,6 +261,11 @@ export function ListingDetailPage() {
     uploadedAt?: string;
     media: { id: number; url: string }[];
     initialIndex: number;
+    aiStatus?: "pending" | "auto_rejected" | "flagged" | "passed" | "failed" | null;
+    aiScore?: number | null;
+    aiSummary?: string | null;
+    aiFlags?: string[] | null;
+    aiExtractedData?: Record<string, any> | null;
   } | null>(null);
 
   // Photo gallery state
@@ -1737,6 +1750,47 @@ export function ListingDetailPage() {
                                   </>
                                 )}
                               </div>
+
+                              {/* AI Overview Badge & Summary */}
+                              {doc.ai_status && (
+                                <div className="flex flex-wrap items-center gap-2 mt-2">
+                                  <span
+                                    className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium border ${
+                                      doc.ai_status === "passed"
+                                        ? "bg-emerald-950/70 border-emerald-500/40 text-emerald-300"
+                                        : doc.ai_status === "flagged"
+                                        ? "bg-amber-950/70 border-amber-500/40 text-amber-300"
+                                        : doc.ai_status === "auto_rejected"
+                                        ? "bg-rose-950/70 border-rose-500/40 text-rose-300"
+                                        : "bg-sky-950/70 border-sky-500/40 text-sky-300"
+                                    }`}
+                                  >
+                                    <span className="material-symbols-outlined text-[13px]">
+                                      {doc.ai_status === "passed"
+                                        ? "check_circle"
+                                        : doc.ai_status === "auto_rejected"
+                                        ? "cancel"
+                                        : doc.ai_status === "flagged"
+                                        ? "warning"
+                                        : "psychology"}
+                                    </span>
+                                    <span>
+                                      {doc.ai_status === "auto_rejected"
+                                        ? `AI Auto-Rejected (${doc.ai_score ?? 0}%)`
+                                        : doc.ai_status === "flagged"
+                                        ? `AI Flagged (${doc.ai_score ?? 0}%)`
+                                        : doc.ai_status === "passed"
+                                        ? `AI Passed (${doc.ai_score ?? 0}%)`
+                                        : "AI Processing"}
+                                    </span>
+                                  </span>
+                                  {doc.ai_summary && (
+                                    <span className="text-[11px] text-slate-400 line-clamp-1 italic">
+                                      "{doc.ai_summary}"
+                                    </span>
+                                  )}
+                                </div>
+                              )}
                             </div>
                           </div>
 
@@ -1785,6 +1839,11 @@ export function ListingDetailPage() {
                                         uploadedAt: doc.uploaded_at,
                                         media: doc.media,
                                         initialIndex: idx,
+                                        aiStatus: doc.ai_status,
+                                        aiScore: doc.ai_score,
+                                        aiSummary: doc.ai_summary,
+                                        aiFlags: doc.ai_flags,
+                                        aiExtractedData: doc.ai_extracted_data,
                                       })
                                     }
                                     className="group/file relative rounded-xl overflow-hidden border border-white/10 hover:border-slate/50 bg-[#12151c] aspect-[4/3] flex flex-col items-center justify-center cursor-pointer transition shadow-sm hover:scale-[1.02]"
@@ -3087,6 +3146,11 @@ export function ListingDetailPage() {
           uploadedAt={activeViewerDoc.uploadedAt}
           media={activeViewerDoc.media}
           initialIndex={activeViewerDoc.initialIndex}
+          aiStatus={activeViewerDoc.aiStatus}
+          aiScore={activeViewerDoc.aiScore}
+          aiSummary={activeViewerDoc.aiSummary}
+          aiFlags={activeViewerDoc.aiFlags}
+          aiExtractedData={activeViewerDoc.aiExtractedData}
         />
       )}
 
