@@ -4,7 +4,7 @@ This log records actions actually performed under the owner's deployment authori
 The source-level explanation, alternatives, and changed-line map are in
 [document-verification-fixes.md](document-verification-fixes.md).
 
-## Completed so far
+## Completed
 
 1. Inspected the configured Supabase database and storage without printing credentials.
    Found 34 documents, 34 referenced attachments, no duplicate listing/type pairs,
@@ -32,21 +32,92 @@ The source-level explanation, alternatives, and changed-line map are in
 7. Confirmed GitHub access through the existing credential manager and identified
    `main` as the production branch used by Vercel. Hosting URLs supplied by owner:
    frontend `https://nibash-one.vercel.app/`, backend `https://nibash-api.onrender.com`.
+8. Committed the source fixes as `05cbb22` and pushed them to production `main`
+   with a normal fast-forward from `1d876fb`. Unrelated untracked artifacts were
+   excluded. Vercel reported success; its production bundle contains the new
+   screening text and uses `https://nibash-api.onrender.com/api`.
+9. Ran the compiled private-copy migration. The initial run migrated 23 attachments
+   before a storage operation failed; the safe rerun migrated the remaining 11.
+   Each copy was downloaded and compared byte-for-byte before changing its pointer.
+   The script's generic failure message did not identify that storage operation.
+10. Found two additional unlinked media records under the old document prefix.
+    Confirmed neither was linked to a listing photo or review. Copied both files
+    privately, verified their bytes, and preserved their media rows. Removed the
+    backed-up public objects, including the folder placeholder. Public apartment
+    photos remain in `listing-images`; that bucket remains public by design.
+11. Drained the cleanup queue, including an abandoned migration-copy reservation.
+    The final database check shows **34 documents, 34 attachments, zero legacy
+    attachments, zero cleanup jobs, and zero public document objects**.
+12. Confirmed the Render backend runs the new behavior: owner and verifier requests
+    return 200 with versioned documents, signed private URLs, `Cache-Control:
+    no-store`, and no AI score field. Anonymous access returns 401; an unrelated
+    authenticated user receives 403. `/health` returns 200 with database access.
+    These read-only checks used short-lived diagnostic tokens signed locally;
+    tokens and document contents were not printed or committed.
+13. Checked every original public URL: **37/37 denied access** from this machine.
+    During the synthetic test, all 35 referenced private objects denied direct
+    public access and permitted authenticated backend download; a signed download
+    returned 200. A separately generated one-second signed link returned 400 after
+    expiry. Application links retain their configured 300-second lifetime.
+14. Created one temporary, unavailable listing for an end-to-end synthetic check.
+    The live API rejected two PDF files with 400 and accepted one two-page PDF with
+    201, upload version 1, private storage, and `application/pdf`. The Render worker
+    claimed the job, retried three times, and reached `failed` rather than leaving
+    it pending indefinitely. Removed this exact fixture, its document/job/media,
+    and its storage object afterward. No existing listing was replaced or reviewed.
+15. Verified the configured local Gemini key can read the `gemini-3.8-flash` model
+    metadata and that the model advertises `generateContent`. Actual generation
+    did not complete: the synthetic PDF timed out at the application's 15-second
+    deadline and at a diagnostic 90-second deadline. A minimal text-only generation
+    probe also timed out after 30 seconds. No speculative timeout or model change
+    was deployed based on these results.
 
 ## Environment
 
 The local backend already has `DATABASE_URL`, `JWT_SECRET`, `SUPABASE_URL`,
 `SUPABASE_SERVICE_ROLE_KEY`, `GEMINI_API_KEY`, and `PORT`. No new mandatory variable
 is introduced. Optional `GEMINI_MODEL` defaults in code to `gemini-3.8-flash`.
-The frontend's production `VITE_API_URL` must target the Render API, not localhost.
-Hosting environment settings have not yet been inspected directly.
+The deployed frontend's `VITE_API_URL` was verified through its bundle to target
+`https://nibash-api.onrender.com/api`. No local or hosted environment variables
+were changed. Render's database, authentication, and Supabase credentials work
+for the tested paths. Its Gemini settings have not been inspected directly.
 
-## In progress
+## Remaining issue: Gemini generation
 
-Private file copy, removal of backed-up public copies, production code release,
-and production smoke checks are not yet recorded as complete. Do not interpret
-successful local tests or schema setup as proof that the deployed services run
-the new code. The old backend has not been paused through Render's dashboard.
+The code release, schema migration, private-file migration, public-copy cleanup,
+and access checks are complete. **Successful AI screening is not verified.**
+The production synthetic job exhausted its retries; local generation probes also
+timed out. This does not establish whether Render's failure has the same cause.
+Render logs/environment access is needed to distinguish a missing or different
+production key/model from provider/network/quota problems. A Render API key was
+requested through local environment configuration, not through chat.
+
+Once access is available: inspect the worker error/log and Gemini configuration,
+verify the provider request from the deployed environment, correct the confirmed
+cause, repeat the synthetic two-page test, and remove its exact fixture again.
+Do not bulk requeue or resubmit real documents merely to test provider availability.
+The current UI supports manual review with an explicit override and audit reason.
+
+No forced Render interruption/restart test or labeled AI-accuracy evaluation was
+performed. Recovery and stale-result handling passed the isolated database tests.
+The old backend was not paused through Render's dashboard during release; it was
+replaced by the Git-triggered deployment. The final inventory found no remaining
+public document objects or legacy attachment pointers.
+
+## Evidence files and commands
+
+The private backup directory contains the database dump, archive listing, metadata
+snapshots, per-object hashes/bytes, migration results, storage verification results,
+and `synthetic-smoke.json` with the fixture's lifecycle and failed-job result.
+Operational scripts are copied there under `operations/` for auditability; they
+read the local environment and do not embed credentials. Do not rerun the backup
+or migration modes blindly: some intentionally refuse existing outputs.
+
+Executed build/test commands: `npm ci` in `server/` and `client/`, `npm test` and
+`npm run build` in `server/`, and `npm run build` in `client/`. The file-copy command
+was `node dist/scripts/migratePrivateDocuments.js --apply` from `server/`.
+Migration 015 was applied once through a PostgreSQL connection; earlier migrations
+were not rerun against production. The FK/optional-cron changes apply to fresh setup.
 
 ## Recovery and limitations
 
