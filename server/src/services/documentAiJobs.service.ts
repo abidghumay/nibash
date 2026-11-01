@@ -11,6 +11,20 @@ export interface DocumentAiJob {
   lease_token: string;
 }
 
+export function documentScreeningFailureCode(error: unknown): string {
+  if (!(error instanceof Error)) return "unexpected_error";
+  if (error.name === "TimeoutError" || error.name === "AbortError") return "timeout";
+  if (error instanceof TypeError && error.message.startsWith("fetch failed")) return "network_error";
+  if (error.message === "GEMINI_API_KEY environment variable is not configured") return "gemini_key_missing";
+  const provider = /^Gemini API error \(([45]\d{2})\)$/.exec(error.message);
+  if (provider) return `gemini_http_${provider[1]}`;
+  const storage = /^Document storage request failed \(([45]\d{2})\)$/.exec(error.message);
+  if (storage) return `storage_http_${storage[1]}`;
+  if (["Gemini returned invalid JSON", "Empty response received from Gemini API"].includes(error.message)
+    || error.message.startsWith("Invalid AI response")) return "invalid_model_response";
+  return "unexpected_error";
+}
+
 export async function claimDocumentAiJob(): Promise<DocumentAiJob | undefined> {
   const result = await pool.query(`UPDATE document_ai_jobs SET status='running',
     attempt_count=attempt_count+1, lease_token=$1, lease_until=now()+interval '2 minutes'
@@ -44,6 +58,7 @@ export async function finishDocumentAiJob(job: DocumentAiJob, result?: DocumentE
 export async function processOneDocumentAiJob() {
   const job = await claimDocumentAiJob();
   if (!job) return false;
+  let stage = "load_document";
   try {
     const data = await pool.query(`SELECT d.document_type, l.title, u.name AS owner_name,
       a.name AS area_name, a.city, m.media_path, m.storage_bucket, m.mime_type
@@ -61,16 +76,19 @@ export async function processOneDocumentAiJob() {
       throw new Error("Document requires migration or a combined PDF");
     }
     const doc = data.rows[0];
+    stage = "download_document";
     const buffer = await downloadDocument(doc.storage_bucket, doc.media_path);
+    stage = "evaluate_document";
     const result = await evaluateDocumentWithGemini({
       documentId: job.document_id, documentType: doc.document_type,
       media: { buffer, mimeType: doc.mime_type }, ownerName: doc.owner_name,
       listingAddress: [doc.area_name, doc.city].filter(Boolean).join(", "), listingTitle: doc.title,
     });
+    stage = "save_result";
     await finishDocumentAiJob(job, result);
-  } catch {
+  } catch (error) {
     // No document contents, URLs, provider responses or credentials in logs.
-    console.error(`Document screening attempt failed: job ${job.id}`);
+    console.error(`Document screening attempt failed: job ${job.id}; stage=${stage}; reason=${documentScreeningFailureCode(error)}`);
     await finishDocumentAiJob(job);
   }
   return true;

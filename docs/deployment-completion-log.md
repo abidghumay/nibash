@@ -130,6 +130,22 @@ public document objects or legacy attachment pointers.
 
 ## Evidence files and commands
 
+The owner supplied `nibash-api-deploy-cc3db0c-2026-11-01-2127.log` from Downloads.
+It confirms checkout of `cc3db0c` on `main`, a successful TypeScript build, server
+startup, and Render's live-service announcement. The final line is `Document
+screening attempt failed: job 2`, without a cause. This establishes that Render
+ran the model-default change; it does not establish which model an environment
+override selected, or why the request failed. The dotenv `injected env (0)` line
+only reports values loaded from a local file, not whether Render supplied secrets.
+
+To make the next runtime log actionable, the worker now records the failing stage
+and a fixed error category: missing Gemini key, HTTP status, timeout, network error,
+invalid model response, or unknown. Arbitrary messages, response bodies, document
+contents, URLs, and credentials are excluded. Changes are in
+`server/src/services/documentAiJobs.service.ts:15` and its screening catch block;
+the redaction regression is in `documentAiJobs.service.test.ts:5`. All 59 backend
+tests and the backend build passed. No database or environment change is required.
+
 The private backup directory contains the database dump, archive listing, metadata
 snapshots, per-object hashes/bytes, migration results, storage verification results,
 and `synthetic-smoke.json` with the fixture's lifecycle and failed-job result.
