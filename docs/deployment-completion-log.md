@@ -93,6 +93,21 @@ test verifies the default and override. Backend tests: 58 passed; build passed.
 This proves neither model accuracy nor production behavior until a new deployed
 worker test succeeds. Render environment settings are still inaccessible.
 
+Live follow-up: a new synthetic upload returned 201 and the multi-file check
+returned 400, but its screening job failed twice and was queued for retry. This
+does not identify the error or prove which model the deployed service used. The
+exact test listing, document, job, media row, and object were removed afterward;
+the database again has 34 documents, 34 attachments, zero public document objects,
+and no remaining cleanup jobs. Vercel reported a successful deployment of commit
+`cc3db0c`; Render's deployed commit and Gemini environment override could not be
+independently inspected without service access. AI screening remains unresolved.
+
+Follow-up changes: `server/src/services/aiDocumentVerifier.service.ts:213`
+selects the new default, `server/.env.example:7` shows it, and
+`server/src/services/aiDocumentVerifier.service.test.ts:8` checks both the default
+and explicit override. The Lite model answered the synthetic request faster in
+these observations, but this is not a benchmark or proof of equivalent accuracy.
+
 The code release, schema migration, private-file migration, public-copy cleanup,
 and access checks are complete. **Successful AI screening is not verified.**
 The production synthetic job exhausted its retries; local generation probes also
