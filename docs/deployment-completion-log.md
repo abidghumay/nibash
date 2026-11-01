@@ -145,6 +145,11 @@ contents, URLs, and credentials are excluded. Changes are in
 `server/src/services/documentAiJobs.service.ts:15` and its screening catch block;
 the redaction regression is in `documentAiJobs.service.test.ts:5`. All 59 backend
 tests and the backend build passed. No database or environment change is required.
+The diagnostic patch was pushed as `0350884`. A synthetic upload at 21:33 Dhaka
+was accepted and its job retried after failing; a fresh Render runtime log should
+contain the new `stage=` and `reason=` fields if this commit had finished deploying.
+The exact fixture and file were removed, and final checks again found 34 documents,
+34 attachments, zero legacy/public document objects, and an empty cleanup queue.
 
 The private backup directory contains the database dump, archive listing, metadata
 snapshots, per-object hashes/bytes, migration results, storage verification results,
