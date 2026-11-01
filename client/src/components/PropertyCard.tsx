@@ -204,22 +204,10 @@ export function PropertyCard({
                 Applied
               </span>
             )}
-            {user?.is_verifier && "average_ai_score" in listing && listing.average_ai_score !== null && listing.average_ai_score !== undefined && (
-              <span className={`glass-panel-subtle px-2.5 py-1 rounded-full text-[11px] font-label-sm uppercase tracking-wider border shadow-md flex items-center gap-1.5 ${
-                Number(listing.average_ai_score) >= 75
-                  ? "text-emerald-300 border-emerald-500/40 bg-emerald-950/70"
-                  : Number(listing.average_ai_score) >= 40
-                  ? "text-amber-300 border-amber-500/40 bg-amber-950/70"
-                  : "text-rose-300 border-rose-500/40 bg-rose-950/70"
-              }`}>
-                <span className="material-symbols-outlined text-[13px]">psychology</span>
-                AI Score: {Math.round(Number(listing.average_ai_score))}%
-              </span>
-            )}
             {user?.is_verifier && "ai_rejected_docs" in listing && Number(listing.ai_rejected_docs) > 0 && (
               <span className="glass-panel-subtle px-2.5 py-1 rounded-full text-[11px] font-label-sm uppercase tracking-wider text-rose-300 border border-rose-500/40 bg-rose-950/70 shadow-md flex items-center gap-1">
                 <span className="material-symbols-outlined text-[13px]">warning</span>
-                {listing.ai_rejected_docs} Rejected
+                {listing.ai_rejected_docs} screening failed
               </span>
             )}
             {"verified" in listing && listing.verified && (

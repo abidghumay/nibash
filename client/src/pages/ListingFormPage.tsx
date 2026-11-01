@@ -8,6 +8,7 @@ import { uploadListingDocuments } from "../api/uploadDocuments";
 import { getAmenityIcon } from "../utils/amenities";
 
 const DOCUMENT_TYPES = [
+  { id: "dolil_deed", label: "Land Deed (Dolil)", shortLabel: "Land Deed", hint: "Combine all pages into one PDF" },
   {
     id: "electricity_bill_receipt",
     label: "Electricity Bill Receipt",
@@ -99,11 +100,10 @@ export function ListingFormPage() {
     };
   }, [images]);
 
-  // Clean up object URLs for staged documents on unmount
-  useEffect(() => {
-    return () => {
-      stagedDocs.forEach((d) => URL.revokeObjectURL(d.previewUrl));
-    };
+  const stagedDocsRef = useRef(stagedDocs);
+  stagedDocsRef.current = stagedDocs;
+  useEffect(() => () => {
+    stagedDocsRef.current.forEach(d => URL.revokeObjectURL(d.previewUrl));
   }, []);
 
   // Initial Terms State
@@ -205,35 +205,20 @@ export function ListingFormPage() {
   ) {
     if (!incoming) return;
     const fileArray = Array.from(incoming);
-    const validFiles = fileArray.filter(
-      (file) =>
-        [
-          "image/jpeg",
-          "image/png",
-          "image/webp",
-          "image/jpg",
-          "application/pdf",
-        ].includes(file.type) && file.size <= 5 * 1024 * 1024,
-    );
-
-    if (validFiles.length === 0) return;
-
-    // Check count for targetDocType (max 5 per type)
-    const existingCount = stagedDocs.filter(
-      (d) => d.type === targetDocType,
-    ).length;
-    const remainingSlots = 5 - existingCount;
-    if (remainingSlots <= 0) return;
-
-    const filesToAdd = validFiles.slice(0, remainingSlots);
-    const newItems: StagedDocument[] = filesToAdd.map((file) => ({
-      id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
-      type: targetDocType,
-      file,
-      previewUrl: URL.createObjectURL(file),
-    }));
-
-    setStagedDocs((prev) => [...prev, ...newItems]);
+    if (fileArray.length !== 1) {
+      setError("Choose one file per document type. Combine multiple pages into one PDF.");
+      return;
+    }
+    const file = fileArray[0];
+    if (!["image/jpeg", "image/png", "image/webp", "application/pdf"].includes(file.type) ||
+        file.size === 0 || file.size > 5 * 1024 * 1024) {
+      setError("Choose a JPEG, PNG, WebP or PDF up to 5 MB.");
+      return;
+    }
+    setError(null);
+    const newItem = { id: crypto.randomUUID(), type: targetDocType, file, previewUrl: URL.createObjectURL(file) };
+    stagedDocs.filter(d => d.type === targetDocType).forEach(d => URL.revokeObjectURL(d.previewUrl));
+    setStagedDocs(prev => [...prev.filter(d => d.type !== targetDocType), newItem]);
   }
 
   function handleDocSelect(e: React.ChangeEvent<HTMLInputElement>) {
@@ -388,7 +373,7 @@ export function ListingFormPage() {
         setUploading(false);
       }
 
-      if (!isEdit && stagedDocs.length > 0) {
+      if (stagedDocs.length > 0) {
         setDocUploading(true);
         try {
           const grouped = stagedDocs.reduce<Record<string, File[]>>(
@@ -1065,7 +1050,7 @@ export function ListingFormPage() {
             </p>
           </div>
 
-          {!isEdit && (
+          {(
             <div>
               <div className="flex items-center justify-between mb-3 border-b border-slate-800 pb-1">
                 <div className="flex items-center gap-2">
@@ -1079,8 +1064,7 @@ export function ListingFormPage() {
                 </span>
               </div>
               <p className="text-xs text-slate-400 mb-4">
-                Attach proof documents for the verification team. Verified
-                listings gain trust and rank higher.
+                Upload one complete file per type for human review. On an existing listing, a new file replaces that type and resets its review. Combine multiple pages into one PDF.
               </p>
 
               {/* Quick Type Selection Pills */}
@@ -1129,7 +1113,7 @@ export function ListingFormPage() {
                         </span>
                       </div>
                       <span className="text-[11px] font-mono text-slate-400">
-                        {countForCurrentType} / 5 photos added
+                        {countForCurrentType} / 1 file added
                       </span>
                     </div>
                     <p className="text-[11px] text-slate-400 flex items-center gap-1.5">
@@ -1145,13 +1129,16 @@ export function ListingFormPage() {
                 id="doc-files"
                 type="file"
                 accept="image/jpeg,image/png,image/webp,application/pdf"
-                multiple
+                aria-label="Choose one complete document"
                 onChange={handleDocSelect}
                 className="hidden"
               />
 
               {/* Drag & Drop Area */}
               <div
+                role="button"
+                tabIndex={0}
+                onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); docFileInputRef.current?.click(); } }}
                 onClick={() => docFileInputRef.current?.click()}
                 onDragOver={handleDocDragOver}
                 onDragLeave={handleDocDragLeave}
@@ -1180,15 +1167,14 @@ export function ListingFormPage() {
 
                 <p className="text-sm font-medium text-white mb-0.5">
                   {isDocDragging
-                    ? "Drop document files here"
+                    ? "Drop one complete document here"
                     : `Click to browse or drop ${
                         DOCUMENT_TYPES.find((d) => d.id === selectedDocType)
                           ?.shortLabel || "document"
                       } files (PDF or Images)`}
                 </p>
                 <p className="text-xs text-slate-400 mb-3">
-                  PDF, JPG, PNG, or WebP &bull; Up to 5MB per file &bull; Max 5
-                  files
+                  One PDF, JPG, PNG, or WebP up to 5 MB. Combine all pages into one PDF; selecting another file replaces this type.
                 </p>
                 <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-slate-800 text-slate-200 border border-slate-700 hover:bg-slate-700 transition">
                   <svg
@@ -1204,7 +1190,7 @@ export function ListingFormPage() {
                       d="M12 4v16m8-8H4"
                     />
                   </svg>
-                  Select Document Files
+                  Select Document File
                 </span>
               </div>
 

@@ -1,3 +1,4 @@
+import { screeningLabel } from "../utils/documentScreening";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useNavigate, useLocation, Link } from "react-router-dom";
 import { apiClient } from "../api/client";
@@ -25,8 +26,11 @@ export interface ListingDocument {
   is_verified: boolean;
   verification_type?: string | null;
   uploaded_at: string;
+  upload_version: number;
+  reviewed_at?: string | null;
+  review_reason?: string | null;
+  verifier_id?: number | null;
   ai_status?: "pending" | "auto_rejected" | "flagged" | "passed" | "failed" | null;
-  ai_score?: number | null;
   ai_summary?: string | null;
   ai_flags?: string[] | null;
   ai_extracted_data?: Record<string, any> | null;
@@ -245,6 +249,9 @@ export function ListingDetailPage() {
 
   // Verifier actions state
   const [verifyingDocId, setVerifyingDocId] = useState<number | null>(null);
+  const [reviewReasons, setReviewReasons] = useState<Record<number, string>>({});
+  const [reviewVersions, setReviewVersions] = useState<Record<number, number>>({});
+  const [reviewOverrides, setReviewOverrides] = useState<Record<number, boolean>>({});
   const [docVerifyError, setDocVerifyError] = useState<string | null>(null);
   const [verifying, setVerifying] = useState(false);
   const [verifyError, setVerifyError] = useState<string | null>(null);
@@ -262,7 +269,6 @@ export function ListingDetailPage() {
     media: { id: number; url: string }[];
     initialIndex: number;
     aiStatus?: "pending" | "auto_rejected" | "flagged" | "passed" | "failed" | null;
-    aiScore?: number | null;
     aiSummary?: string | null;
     aiFlags?: string[] | null;
     aiExtractedData?: Record<string, any> | null;
@@ -753,19 +759,28 @@ export function ListingDetailPage() {
     }
   }, [id, user]);
 
+  useEffect(() => {
+    if (!documents.some(doc => doc.ai_status === "pending") || !id || !user) return;
+    const timer = window.setInterval(() => {
+      void apiClient.get<{ documents: ListingDocument[] }>(`/documents/listings/${id}`)
+        .then(result => setDocuments(result.documents))
+        .catch(() => { /* Keep the last readable state; manual refresh reports errors. */ });
+    }, 10000);
+    return () => window.clearInterval(timer);
+  }, [documents, id, user]);
+
   const handleVerifyDocument = async (documentId: number) => {
     if (verifyingDocId !== null) return;
     setVerifyingDocId(documentId);
     setDocVerifyError(null);
     try {
-      await apiClient.post(`/documents/${documentId}/verify`);
-      setDocuments((prev) =>
-        prev.map((d) =>
-          d.id === documentId
-            ? { ...d, is_verified: true, verification_type: "manual" }
-            : d,
-        ),
-      );
+      const doc = documents.find(d => d.id === documentId);
+      if (!doc) return;
+      await apiClient.post(`/documents/${documentId}/verify`, {
+        upload_version: reviewVersions[documentId] ?? doc.upload_version, reason: reviewReasons[documentId] || "",
+        override_ai: reviewOverrides[documentId] || false,
+      });
+      await loadDocuments();
     } catch (err: any) {
       setDocVerifyError(err.message || "Failed to verify document.");
     } finally {
@@ -1518,7 +1533,7 @@ export function ListingDetailPage() {
 
               {/* Error Banner */}
               {tenantHistoryError && (
-                <div className="p-3 mb-4 rounded-xl bg-red-950/60 border border-red-800 text-red-300 text-xs flex items-center justify-between">
+                <div role="alert" className="p-3 mb-4 rounded-xl bg-red-950/60 border border-red-800 text-red-300 text-xs flex items-center justify-between">
                   <span>{tenantHistoryError}</span>
                   <button
                     type="button"
@@ -1614,7 +1629,7 @@ export function ListingDetailPage() {
                     </span>
                   </div>
                   <p className="text-xs text-slate-400 mt-1">
-                    Official documents uploaded to substantiate ownership,
+                    Evidence for human review. AI screening does not establish authenticity or ownership. Documents support
                     utilities, and property legitimacy.
                   </p>
                 </div>
@@ -1630,7 +1645,7 @@ export function ListingDetailPage() {
               </div>
 
               {docVerifyError && (
-                <div className="p-3 mb-4 rounded-xl bg-red-950/60 border border-red-800 text-red-300 text-xs flex items-center justify-between">
+                <div role="alert" className="p-3 mb-4 rounded-xl bg-red-950/60 border border-red-800 text-red-300 text-xs flex items-center justify-between">
                   <span>{docVerifyError}</span>
                   <button
                     type="button"
@@ -1677,6 +1692,8 @@ export function ListingDetailPage() {
                   {documents.map((doc) => {
                     const docTitle = formatDocumentType(doc.document_type);
                     const isDocVerified = Boolean(doc.is_verified);
+                    const reviewVersion = reviewVersions[doc.id] ?? doc.upload_version;
+                    const isReviewStale = reviewVersion !== doc.upload_version;
                     const uploadedDate = doc.uploaded_at
                       ? new Date(doc.uploaded_at).toLocaleDateString(
                           undefined,
@@ -1731,7 +1748,7 @@ export function ListingDetailPage() {
                                     }`}
                                   />
                                   {isDocVerified
-                                    ? "Verified"
+                                    ? "Human reviewed"
                                     : "Pending Review"}
                                 </span>
                               </div>
@@ -1751,6 +1768,7 @@ export function ListingDetailPage() {
                                 )}
                               </div>
 
+                              {doc.reviewed_at && <p className="text-xs text-slate-300">Reviewed by #{doc.verifier_id} on {new Date(doc.reviewed_at).toLocaleString()}: {doc.review_reason}</p>}
                               {/* AI Overview Badge & Summary */}
                               {doc.ai_status && (
                                 <div className="flex flex-wrap items-center gap-2 mt-2">
@@ -1775,13 +1793,7 @@ export function ListingDetailPage() {
                                         : "psychology"}
                                     </span>
                                     <span>
-                                      {doc.ai_status === "auto_rejected"
-                                        ? `AI Auto-Rejected (${doc.ai_score ?? 0}%)`
-                                        : doc.ai_status === "flagged"
-                                        ? `AI Flagged (${doc.ai_score ?? 0}%)`
-                                        : doc.ai_status === "passed"
-                                        ? `AI Passed (${doc.ai_score ?? 0}%)`
-                                        : "AI Processing"}
+                                      {screeningLabel(doc.ai_status)}
                                     </span>
                                   </span>
                                   {doc.ai_summary && (
@@ -1796,21 +1808,34 @@ export function ListingDetailPage() {
 
                           {/* Quick Verify Document Button (for verifiers) */}
                           {user?.is_verifier && !isDocVerified && (
-                            <button
-                              type="button"
-                              disabled={verifyingDocId === doc.id}
-                              onClick={() => handleVerifyDocument(doc.id)}
-                              className="self-start sm:self-center px-3.5 py-1.5 rounded-lg bg-emerald-950/60 border border-emerald-600/50 hover:bg-emerald-900 text-emerald-300 text-xs font-medium transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
-                            >
-                              <span className="material-symbols-outlined text-sm">
-                                check
-                              </span>
-                              <span>
-                                {verifyingDocId === doc.id
-                                  ? "Verifying..."
-                                  : "Verify Document"}
-                              </span>
-                            </button>
+                            <form className="space-y-2 sm:max-w-sm" onSubmit={e => { e.preventDefault(); void handleVerifyDocument(doc.id); }}>
+                              <label className="block text-sm" htmlFor={`review-reason-${doc.id}`}>What did you check? (required)</label>
+                              <textarea id={`review-reason-${doc.id}`} name="reason" required minLength={10} maxLength={2000}
+                                disabled={isReviewStale}
+                                className="w-full rounded border border-slate-500 bg-slate-950 p-2 text-base text-white"
+                                value={reviewReasons[doc.id] || ""}
+                                onChange={e => { setReviewReasons(prev => ({...prev, [doc.id]:e.target.value})); setReviewVersions(prev => ({...prev, [doc.id]:prev[doc.id] ?? doc.upload_version})); }} />
+                              {doc.ai_status !== "passed" && (
+                                <label className="flex items-center gap-2 text-sm">
+                                  <input type="checkbox" name="override_ai" required checked={reviewOverrides[doc.id] || false}
+                                    onChange={e => setReviewOverrides(prev => ({...prev, [doc.id]:e.target.checked}))} />
+                                  Override AI screening based on my examination
+                                </label>
+                              )}
+                              <p className="text-xs text-slate-300">Reviewing upload version {reviewVersion}. This records your evidence review, not government confirmation of ownership.</p>
+                              {isReviewStale && <div role="alert" className="text-sm text-amber-200">
+                                The document was replaced. Inspect the current file before starting a new review.
+                                <button type="button" className="block min-h-12 underline" onClick={() => {
+                                  setReviewReasons(prev => ({...prev, [doc.id]:""}));
+                                  setReviewOverrides(prev => ({...prev, [doc.id]:false}));
+                                  setReviewVersions(prev => ({...prev, [doc.id]:doc.upload_version}));
+                                }}>Discard draft and review version {doc.upload_version}</button>
+                              </div>}
+                              <button type="submit" disabled={verifyingDocId !== null || isReviewStale}
+                                className="min-h-12 px-4 rounded border border-emerald-500 text-emerald-200 disabled:opacity-50">
+                                {verifyingDocId === doc.id ? "Saving review..." : "Record human review"}
+                              </button>
+                            </form>
                           )}
                         </div>
 
@@ -1831,21 +1856,19 @@ export function ListingDetailPage() {
                                 return (
                                   <div
                                     key={file.id}
-                                    onClick={() =>
-                                      setActiveViewerDoc({
-                                        title: docTitle,
-                                        type: doc.document_type,
-                                        isVerified: isDocVerified,
-                                        uploadedAt: doc.uploaded_at,
-                                        media: doc.media,
-                                        initialIndex: idx,
-                                        aiStatus: doc.ai_status,
-                                        aiScore: doc.ai_score,
-                                        aiSummary: doc.ai_summary,
-                                        aiFlags: doc.ai_flags,
-                                        aiExtractedData: doc.ai_extracted_data,
-                                      })
-                                    }
+                                    onClick={async () => {
+                                      try {
+                                        const fresh = await apiClient.get<{documents: ListingDocument[]}>(`/documents/listings/${id}`);
+                                        setDocuments(fresh.documents);
+                                        const current = fresh.documents.find(d => d.id === doc.id);
+                                        if (!current) throw new Error("Document changed; reload the page.");
+                                        setActiveViewerDoc({ title: docTitle, type: current.document_type,
+                                          isVerified: current.is_verified, uploadedAt: current.uploaded_at,
+                                          media: current.media, initialIndex: Math.min(idx, current.media.length - 1),
+                                          aiStatus: current.ai_status, aiSummary: current.ai_summary,
+                                          aiFlags: current.ai_flags, aiExtractedData: current.ai_extracted_data });
+                                      } catch (err) { setDocumentsError(err instanceof Error ? err.message : "Unable to refresh document access"); }
+                                    }}
                                     className="group/file relative rounded-xl overflow-hidden border border-white/10 hover:border-slate/50 bg-[#12151c] aspect-[4/3] flex flex-col items-center justify-center cursor-pointer transition shadow-sm hover:scale-[1.02]"
                                   >
                                     {isPdf ? (
@@ -2467,7 +2490,7 @@ export function ListingDetailPage() {
                   </div>
                 )}
                 {applyError && (
-                  <div className="p-3 mb-4 rounded-xl bg-red-950/60 border border-red-800 text-red-300 text-xs">
+                  <div role="alert" className="p-3 mb-4 rounded-xl bg-red-950/60 border border-red-800 text-red-300 text-xs">
                     {applyError}
                   </div>
                 )}
@@ -3147,7 +3170,6 @@ export function ListingDetailPage() {
           media={activeViewerDoc.media}
           initialIndex={activeViewerDoc.initialIndex}
           aiStatus={activeViewerDoc.aiStatus}
-          aiScore={activeViewerDoc.aiScore}
           aiSummary={activeViewerDoc.aiSummary}
           aiFlags={activeViewerDoc.aiFlags}
           aiExtractedData={activeViewerDoc.aiExtractedData}

@@ -14,6 +14,7 @@ import documentRoutes from "./routes/document.route.js";
 import dashboardRoutes from "./routes/dashboard.route.js";
 import incomeRoutes from "./routes/income.route.js";
 import areaRoutes from "./routes/area.route.js";
+import { startDocumentWorker } from "./services/documentAiJobs.service.js";
 
 dotenv.config();
 
@@ -54,5 +55,6 @@ app.get("/health", async (_req, res) => {
 // starts the actual http server, listening on port .env declares(5000 for fallback)
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
+  startDocumentWorker();
   console.log(`Server running on port ${PORT}`);
 });

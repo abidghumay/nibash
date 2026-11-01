@@ -1,3 +1,4 @@
+import { screeningLabel } from "../utils/documentScreening";
 import { useState, useEffect, useCallback } from "react";
 
 export interface DocumentMediaItem {
@@ -15,7 +16,6 @@ interface DocumentViewerModalProps {
   media: DocumentMediaItem[];
   initialIndex?: number;
   aiStatus?: "pending" | "auto_rejected" | "flagged" | "passed" | "failed" | null;
-  aiScore?: number | null;
   aiSummary?: string | null;
   aiFlags?: string[] | null;
   aiExtractedData?: Record<string, any> | null;
@@ -31,7 +31,6 @@ export function DocumentViewerModal({
   media = [],
   initialIndex = 0,
   aiStatus,
-  aiScore,
   aiSummary,
   aiFlags,
   aiExtractedData,
@@ -137,7 +136,7 @@ export function DocumentViewerModal({
                       isVerified ? "bg-emerald-400" : "bg-amber-400 animate-pulse"
                     }`}
                   />
-                  {isVerified ? "Verified" : "Pending"}
+                  {isVerified ? "Human reviewed" : "Review pending"}
                 </span>
 
                 {/* AI Score Badge */}
@@ -163,13 +162,7 @@ export function DocumentViewerModal({
                         : "psychology"}
                     </span>
                     <span>
-                      {aiStatus === "auto_rejected"
-                        ? `AI Auto-Rejected (${aiScore ?? 0}%)`
-                        : aiStatus === "flagged"
-                        ? `AI Flagged (${aiScore ?? 0}%)`
-                        : aiStatus === "passed"
-                        ? `AI Passed (${aiScore ?? 0}%)`
-                        : "AI Processing"}
+                      {screeningLabel(aiStatus)}
                     </span>
                   </span>
                 )}
@@ -280,11 +273,7 @@ export function DocumentViewerModal({
                 <span className="font-semibold text-white tracking-wide">
                   AI Document Overview
                 </span>
-                {aiScore !== null && aiScore !== undefined && (
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 font-mono text-slate-200">
-                    Confidence: {aiScore}/100
-                  </span>
-                )}
+                <span className="text-xs text-slate-300">Screening checks readability and consistency, not authenticity or legal ownership.</span>
               </div>
               <button
                 type="button"

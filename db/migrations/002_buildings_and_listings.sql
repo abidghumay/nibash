@@ -93,7 +93,7 @@ create table agreements(
 );
 
 CREATE TABLE Starred_Listings (
-    user_id INT NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     listing_id INT NOT NULL REFERENCES listings(id) ON DELETE CASCADE,
     PRIMARY KEY (user_id, listing_id)
 );

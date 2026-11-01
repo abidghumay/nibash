@@ -41,7 +41,6 @@ export interface BackendListing {
   total_docs?: number | null;
   ai_passed_docs?: number | null;
   ai_rejected_docs?: number | null;
-  average_ai_score?: number | null;
 }
 
 export function ListingsPage() {

@@ -5,6 +5,7 @@ export async function uploadListingDocuments(
   documentType: string,
   files: File[],
 ) {
+  if (files.length !== 1) throw new Error("Upload one file; combine all pages into one PDF.");
   const formData = new FormData();
   formData.append("document_type", documentType);
   files.forEach((file) => formData.append("files", file));

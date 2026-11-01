@@ -16,3 +16,9 @@ export const uploadDocumentSchema = z.object({
 });
 
 export type UploadDocumentInput = z.infer<typeof uploadDocumentSchema>;
+
+export const reviewDocumentSchema = z.object({
+  upload_version: z.number().int().positive(),
+  reason: z.string().trim().min(10, "Describe what you checked (at least 10 characters)").max(2000),
+  override_ai: z.boolean().default(false),
+});

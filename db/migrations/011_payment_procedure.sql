@@ -10,7 +10,8 @@
 -- ALTER TABLE Payments
 --   ADD CONSTRAINT uq_payment_contract_month UNIQUE (contract_id, billing_month);
 
-CREATE EXTENSION IF NOT EXISTS pg_cron;
+-- pg_cron is an optional deployment extension, installed by the administrator.
+-- Plain PostgreSQL installations must still be able to apply the schema.
 
 -- Insert a payment for each active contract every month
 CREATE OR REPLACE PROCEDURE generate_monthly_payments()
@@ -53,8 +54,11 @@ BEGIN
 END;
 $$;
 
-SELECT cron.schedule(
-  'mark-overdue-payments',
-  '0 1 * * *',  -- 01:00 UTC daily, an hour after payment generation
-  $$CALL mark_overdue_payments()$$
-);
+DO $migration$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'pg_cron') THEN
+    PERFORM cron.schedule('mark-overdue-payments', '0 1 * * *',
+                          'CALL mark_overdue_payments()');
+  END IF;
+END;
+$migration$;

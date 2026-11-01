@@ -24,7 +24,6 @@ test("includes AI document aggregates in the verifier queue", async (t) => {
             total_docs: 3,
             ai_passed_docs: 1,
             ai_rejected_docs: 1,
-            average_ai_score: 61.5,
           },
         ],
       };
@@ -45,7 +44,6 @@ test("includes AI document aggregates in the verifier queue", async (t) => {
       total_docs: 3,
       ai_passed_docs: 1,
       ai_rejected_docs: 1,
-      average_ai_score: 61.5,
       images: [],
     },
   ]);
@@ -53,7 +51,5 @@ test("includes AI document aggregates in the verifier queue", async (t) => {
   assert.match(calls[0].query, /LEFT JOIN documents d ON d\.listing_id = l\.id/i);
   assert.match(calls[0].query, /ai_status = 'passed'/i);
   assert.match(calls[0].query, /ai_status = 'auto_rejected'/i);
-  assert.match(calls[0].query, /AVG\(d\.ai_score\)/i);
-  assert.match(calls[0].query, /AVG\(d\.ai_score\)::float8/i);
   assert.match(calls[0].query, /GROUP BY l\.id/i);
 });

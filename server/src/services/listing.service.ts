@@ -455,8 +455,7 @@ export async function getUnverifiedListings() {
     `SELECT l.*, t.rent,
             COUNT(d.id)::int AS total_docs,
             COUNT(*) FILTER (WHERE d.ai_status = 'passed')::int AS ai_passed_docs,
-            COUNT(*) FILTER (WHERE d.ai_status = 'auto_rejected')::int AS ai_rejected_docs,
-            AVG(d.ai_score)::float8 AS average_ai_score
+            COUNT(*) FILTER (WHERE d.ai_status = 'auto_rejected')::int AS ai_rejected_docs
      FROM listings l
      JOIN initial_terms it ON it.listing_id = l.id
      JOIN terms t ON t.id = it.terms_id

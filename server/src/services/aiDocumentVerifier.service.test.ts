@@ -37,7 +37,7 @@ test("flags an otherwise valid document with a name mismatch", () => {
   assert.equal(result.confidenceScore, 84);
 });
 
-test("passes an authentic document with matching details", () => {
+test("passes screening with complete matching extracted evidence", () => {
   const result = parseAndScoreAiResult({
     is_valid_document: true,
     detected_document_type: "holding_tax_receipt",
@@ -46,6 +46,8 @@ test("passes an authentic document with matching details", () => {
     flags: ["Owner name matched", "Address matched"],
     extracted_data: {
       ownerNameDetected: "Rahim Chowdhury",
+      addressDetected: "Gulshan, Dhaka",
+      documentNumber: "T1",
       isNameMatched: true,
       isAddressMatched: true,
     },
@@ -66,7 +68,7 @@ test("clamps an out-of-range confidence score before assigning status", () => {
   });
 
   assert.equal(result.confidenceScore, 100);
-  assert.equal(result.aiStatus, "passed");
+  assert.equal(result.aiStatus, "flagged");
 });
 
 test("rounds a fractional confidence score for integer persistence", () => {
@@ -80,7 +82,7 @@ test("rounds a fractional confidence score for integer persistence", () => {
   });
 
   assert.equal(result.confidenceScore, 76);
-  assert.equal(result.aiStatus, "passed");
+  assert.equal(result.aiStatus, "flagged");
 });
 
 test("rejects parseable JSON with invalid field types", () => {
@@ -148,7 +150,7 @@ test("asks Gemini for a response matching the document evaluation schema", async
   await evaluateDocumentWithGemini({
     documentId: 1,
     documentType: "nid",
-    mediaUrl: "https://storage.example/document.jpg",
+    media: { buffer: Buffer.from("synthetic document"), mimeType: "image/jpeg" },
     ownerName: "Rahim Chowdhury",
     listingAddress: "Gulshan, Dhaka",
     listingTitle: "Sunny Gulshan Flat",

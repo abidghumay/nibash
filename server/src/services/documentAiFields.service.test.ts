@@ -62,7 +62,7 @@ test("returns AI verification fields with listing documents", async (t) => {
   const documentQuery = calls.find((call) => call.query.includes("FROM documents"));
   assert.ok(documentQuery);
   assert.match(documentQuery.query, /ai_status/i);
-  assert.match(documentQuery.query, /ai_score/i);
+  assert.doesNotMatch(documentQuery.query, /ai_score/i);
   assert.match(documentQuery.query, /ai_summary/i);
   assert.match(documentQuery.query, /ai_flags/i);
   assert.match(documentQuery.query, /ai_extracted_data/i);

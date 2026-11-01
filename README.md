@@ -63,7 +63,7 @@ nibash/
 │   │   └── triggers/     # SQL trigger definitions
 │   └── package.json
 ├── db/
-│   └── schema.sql   # PostgreSQL schema, triggers, seed data
+│   └── migrations/  # Ordered PostgreSQL schema migrations
 └── README.md
 ```
 
@@ -80,8 +80,14 @@ nibash/
 
    ```bash
    createdb nibash
-   psql -d nibash -f db/schema.sql
    ```
+
+   On this **new, empty database only**, run the SQL files in `db/migrations/`
+   in numeric order (001–015), stopping on errors. Older bootstrap migrations
+   contain destructive statements; never replay them on an existing database.
+   For an existing installation through 014, apply only 015 after a backup.
+   Document storage also requires the Supabase setup and legacy-file migration
+   in [the document deployment guide](docs/document-verification-fixes.md).
 
 3. **Configure environment variables**
 
@@ -97,11 +103,10 @@ nibash/
 
    ```bash
    cd server
-   npm install express pg cors dotenv
-   npm install -D nodemon
+   npm ci
 
    cd ../client
-   npm install
+   npm ci
    ```
 
 5. **Run the app**
@@ -113,6 +118,17 @@ nibash/
    # Frontend (from /client)
    npm run dev
    ```
+
+### Document verification
+
+Documents use private storage, versioned human reviews, and a PostgreSQL-backed
+screening queue. Copy the storage and Gemini settings from `server/.env.example`.
+Run the backend as a persistent process so its worker can recover queued jobs.
+See [changes, test evidence, tradeoffs, and deployment steps](docs/document-verification-fixes.md).
+
+From `server/`, `npm test` runs isolated tests with synthetic credentials and an
+embedded PostgreSQL database. The older `src/services/__tests__/` suites require
+a separately provisioned disposable database and are excluded from that command.
 
 ## License
 
