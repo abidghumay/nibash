@@ -4,6 +4,12 @@ This log records actions actually performed under the owner's deployment authori
 The source-level explanation, alternatives, and changed-line map are in
 [document-verification-fixes.md](document-verification-fixes.md).
 
+**Current status:** database/storage migration, code release, access checks, and
+the deployed AI screening smoke test are complete. After the Render environment
+update, synthetic job 5 completed on its first attempt at 21:44:51 Dhaka time.
+All test fixtures were removed. Final counts: 34 documents, 34 private attachments,
+zero legacy attachments, zero public document objects, and zero cleanup jobs.
+
 ## Completed
 
 1. Inspected the configured Supabase database and storage without printing credentials.
@@ -78,11 +84,37 @@ The local backend already has `DATABASE_URL`, `JWT_SECRET`, `SUPABASE_URL`,
 `SUPABASE_SERVICE_ROLE_KEY`, `GEMINI_API_KEY`, and `PORT`. No new mandatory variable
 is introduced. Optional `GEMINI_MODEL` now defaults in code to `gemini-3.5-flash-lite`.
 The deployed frontend's `VITE_API_URL` was verified through its bundle to target
-`https://nibash-api.onrender.com/api`. No local or hosted environment variables
-were changed. Render's database, authentication, and Supabase credentials work
-for the tested paths. Its Gemini settings have not been inspected directly.
+`https://nibash-api.onrender.com/api`. The owner updated the Render environment
+and redeployed after the missing-key diagnosis. No local environment file was
+changed, no secret was committed, and no Render API key was created. The agent
+did not inspect the hosted secret or model override directly. The successful live
+job confirms working production credentials for the tested Gemini request.
 
-## Remaining issue: Gemini generation
+## Resolved: missing Gemini key in Render
+
+The owner supplied the decisive runtime entry for job 4:
+`stage=evaluate_document; reason=gemini_key_missing`.
+At that time the production process had no nonempty `GEMINI_API_KEY`. It reached
+evaluation but failed before sending a Gemini request. Local credentials are not
+automatically copied to Render; the local `.env` is correctly excluded from Git.
+
+The owner was instructed to add the existing Gemini key to Render's Environment
+settings and save/redeploy. The supplied log confirms `a8f35c7` started and became
+live at 21:44:01 Dhaka time. A new synthetic upload created job 5 at 21:44:44;
+it completed with `attempt_count=1` and `ai_status=auto_rejected` around 21:44:51.
+The deliberate synthetic PDF was rejected, rather than left pending or marked
+unavailable. This verifies live upload, private PDF storage, job claiming, Gemini
+evaluation, and result persistence for this example. The endpoint again rejected
+multiple files with 400 and accepted one two-page PDF with 201.
+
+The exact fixture's listing, document, job, media row, and object were removed.
+The cleanup queue is empty and production retains its original 34 documents.
+Owner/verifier read checks again returned 200 with private signed links; anonymous
+access returned 401 and unrelated-user access returned 403. This smoke test is
+not an evaluation of accuracy across document types or fabricated documents.
+
+The investigation below is retained as history. The missing production key caused
+the deployed failure; the local 3.8 timeouts were a separate observation.
 
 Follow-up on 1 November: `gemini-3.8-flash` again timed out on a small request,
 while `gemini-3.5-flash-lite` and `gemini-3.1-flash-lite` both answered minimal
@@ -90,8 +122,8 @@ requests. The real screening function returned an assessment for a synthetic
 two-page PDF with `gemini-3.5-flash-lite` in 7.4 seconds. The application default
 was changed to that model; `GEMINI_MODEL` still overrides the default. A regression
 test verifies the default and override. Backend tests: 58 passed; build passed.
-This proves neither model accuracy nor production behavior until a new deployed
-worker test succeeds. Render environment settings are still inaccessible.
+That local probe did not establish model accuracy. The later job 5 established
+successful production execution for the synthetic example.
 
 Live follow-up: a new synthetic upload returned 201 and the multi-file check
 returned 400, but its screening job failed twice and was queued for retry. This
@@ -99,8 +131,8 @@ does not identify the error or prove which model the deployed service used. The
 exact test listing, document, job, media row, and object were removed afterward;
 the database again has 34 documents, 34 attachments, zero public document objects,
 and no remaining cleanup jobs. Vercel reported a successful deployment of commit
-`cc3db0c`; Render's deployed commit and Gemini environment override could not be
-independently inspected without service access. AI screening remains unresolved.
+`cc3db0c`; at that stage the production issue was still unresolved. Supplied logs
+later confirmed Render's deployed commit and the missing-key error.
 
 Follow-up changes: `server/src/services/aiDocumentVerifier.service.ts:213`
 selects the new default, `server/.env.example:7` shows it, and
@@ -109,24 +141,17 @@ and explicit override. The Lite model answered the synthetic request faster in
 these observations, but this is not a benchmark or proof of equivalent accuracy.
 
 The code release, schema migration, private-file migration, public-copy cleanup,
-and access checks are complete. **Successful AI screening is not verified.**
-The production synthetic job exhausted its retries; local generation probes also
-timed out. This does not establish whether Render's failure has the same cause.
-Render logs/environment access is needed to distinguish a missing or different
-production key/model from provider/network/quota problems. A Render API key was
-requested through local environment configuration, not through chat.
-
-Once access is available: inspect the worker error/log and Gemini configuration,
-verify the provider request from the deployed environment, correct the confirmed
-cause, repeat the synthetic two-page test, and remove its exact fixture again.
-Do not bulk requeue or resubmit real documents merely to test provider availability.
-The current UI supports manual review with an explicit override and audit reason.
+access checks, and successful production AI smoke test are complete. No real legacy
+documents were bulk requeued to test availability. Legacy screening remains flagged
+for resubmission or manual review with an explicit override and audit reason.
 
 No forced Render interruption/restart test or labeled AI-accuracy evaluation was
 performed. Recovery and stale-result handling passed the isolated database tests.
 The old backend was not paused through Render's dashboard during release; it was
 replaced by the Git-triggered deployment. The final inventory found no remaining
 public document objects or legacy attachment pointers.
+The supplied Render build logs also report five dependency audit findings. This
+rollout did not investigate or remediate that separate dependency-audit work.
 
 ## Evidence files and commands
 
@@ -150,6 +175,11 @@ was accepted and its job retried after failing; a fresh Render runtime log shoul
 contain the new `stage=` and `reason=` fields if this commit had finished deploying.
 The exact fixture and file were removed, and final checks again found 34 documents,
 34 attachments, zero legacy/public document objects, and an empty cleanup queue.
+The supplied deployment log showed that this test ran before the new worker
+started at 21:33:38. A fresh test after deployment created job 4 at 21:36:27 Dhaka;
+its first attempt failed around 21:36:29. The current runtime log should therefore
+contain a diagnostic line for job 4 with `stage=` and `reason=`. The fixture was
+removed and final counts remained 34 documents, 34 attachments, and no cleanup jobs.
 
 The private backup directory contains the database dump, archive listing, metadata
 snapshots, per-object hashes/bytes, migration results, storage verification results,
