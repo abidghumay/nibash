@@ -76,13 +76,22 @@ The source-level explanation, alternatives, and changed-line map are in
 
 The local backend already has `DATABASE_URL`, `JWT_SECRET`, `SUPABASE_URL`,
 `SUPABASE_SERVICE_ROLE_KEY`, `GEMINI_API_KEY`, and `PORT`. No new mandatory variable
-is introduced. Optional `GEMINI_MODEL` defaults in code to `gemini-3.8-flash`.
+is introduced. Optional `GEMINI_MODEL` now defaults in code to `gemini-3.5-flash-lite`.
 The deployed frontend's `VITE_API_URL` was verified through its bundle to target
 `https://nibash-api.onrender.com/api`. No local or hosted environment variables
 were changed. Render's database, authentication, and Supabase credentials work
 for the tested paths. Its Gemini settings have not been inspected directly.
 
 ## Remaining issue: Gemini generation
+
+Follow-up on 1 November: `gemini-3.8-flash` again timed out on a small request,
+while `gemini-3.5-flash-lite` and `gemini-3.1-flash-lite` both answered minimal
+requests. The real screening function returned an assessment for a synthetic
+two-page PDF with `gemini-3.5-flash-lite` in 7.4 seconds. The application default
+was changed to that model; `GEMINI_MODEL` still overrides the default. A regression
+test verifies the default and override. Backend tests: 58 passed; build passed.
+This proves neither model accuracy nor production behavior until a new deployed
+worker test succeeds. Render environment settings are still inaccessible.
 
 The code release, schema migration, private-file migration, public-copy cleanup,
 and access checks are complete. **Successful AI screening is not verified.**

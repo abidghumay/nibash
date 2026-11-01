@@ -24,7 +24,7 @@ that every unrelated component has undergone a security audit.
 | Error handling and UI | Upload validation returns 400; provider response bodies and sensitive URLs stay out of errors; expired signed URLs refresh on viewer open; pending screening polls in place. | Reuses existing API and components. Background refresh keeps the review form mounted while the reviewer types. |
 
 The Gemini REST architecture is retained; `GEMINI_MODEL` is configurable and
-defaults to `gemini-3.8-flash`. The model key is sent in a header, not the URL.
+defaults to `gemini-3.5-flash-lite`. The model key is sent in a header, not the URL.
 The service sends authorized document contents to Gemini for screening; private
 storage does not mean that no AI provider processes the contents.
 

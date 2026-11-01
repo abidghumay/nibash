@@ -5,6 +5,35 @@ import {
   parseAndScoreAiResult,
 } from "./aiDocumentVerifier.service.js";
 
+test("uses the working default model unless GEMINI_MODEL overrides it", async (t) => {
+  const originalFetch = globalThis.fetch;
+  const originalModel = process.env.GEMINI_MODEL;
+  const originalKey = process.env.GEMINI_API_KEY;
+  const requested: string[] = [];
+  process.env.GEMINI_API_KEY = "test-key";
+  delete process.env.GEMINI_MODEL;
+  globalThis.fetch = (async (url) => {
+    requested.push(String(url));
+    return Response.json({ candidates: [{ content: { parts: [{ text: JSON.stringify({
+      is_valid_document: false, detected_document_type: "other", confidence_score: 0,
+      summary: "Synthetic", flags: [], extracted_data: {},
+    }) }] } }] });
+  }) as typeof fetch;
+  t.after(() => {
+    globalThis.fetch = originalFetch;
+    if (originalModel === undefined) delete process.env.GEMINI_MODEL; else process.env.GEMINI_MODEL = originalModel;
+    if (originalKey === undefined) delete process.env.GEMINI_API_KEY; else process.env.GEMINI_API_KEY = originalKey;
+  });
+  const input = { documentId: 1, documentType: "nid" as const,
+    media: { buffer: Buffer.from("test"), mimeType: "image/jpeg" },
+    ownerName: "Synthetic", listingAddress: "Synthetic", listingTitle: "Synthetic" };
+  await evaluateDocumentWithGemini(input);
+  process.env.GEMINI_MODEL = "custom-model";
+  await evaluateDocumentWithGemini(input);
+  assert.match(requested[0], /models\/gemini-3\.5-flash-lite:generateContent$/);
+  assert.match(requested[1], /models\/custom-model:generateContent$/);
+});
+
 test("auto-rejects an invalid document", () => {
   const result = parseAndScoreAiResult({
     is_valid_document: false,
