@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { pool } from "../../db/pool.js";
-import { interpretSearch, validateInterpretation, parseAmounts, redactSearchInput } from "./interpretSearch.js";
+import { interpretSearch, validateInterpretation, parseAmounts, redactSearchInput, searchOutputJsonSchema, modelInterpretationSchema } from "./interpretSearch.js";
 
 const catalog = { areas: [{ id: 2, name: "Dhanmondi" }, { id: 4, name: "Gulshan" }], amenities: [{ name: "Elevator" }, { name: "Garage" }] };
 const constraint = (field: string, value: string, evidence: string, mandatory = true) => ({ field, value, evidence, mandatory });
@@ -34,14 +34,44 @@ test("minimum bedrooms and two-sided rent remain distinct", () => {
   assert.deepEqual(r.filters, { minBedrooms: 3, minRent: 20000, maxRent: 30000 });
 });
 
+test("Bangla and Banglish range separators make the following amount the upper bound", () => {
+  for (const [query, lower, upper] of [
+    ["২০ হাজার থেকে ৪০ হাজার টাকার মধ্যে", "২০ হাজার", "৪০ হাজার"],
+    ["20 hajar theke 40k rent", "20 hajar", "40k"],
+  ]) {
+    const result = validateInterpretation(query, output([
+      constraint("minRent", "20000", lower), constraint("maxRent", "40000", upper),
+    ]), catalog);
+    assert.deepEqual(result.filters, { minRent: 20000, maxRent: 40000 });
+    assert.deepEqual(result.unsupported, []);
+  }
+});
+
+test("equivalent Bangla and ASCII numeral evidence preserves the stated budget only", () => {
+  const query = "3 bedrooms in Dhanmondi under ৳২৫০০০";
+  const result = validateInterpretation(query, output([constraint("maxRent", "25000", "৳25000")]), catalog);
+  assert.deepEqual(result.filters, { maxRent: 25000 });
+  assert.deepEqual(result.unsupported, []);
+  const invented = validateInterpretation(query, output([constraint("maxRent", "35000", "৳35000")]), catalog);
+  assert.deepEqual(invented.filters, {});
+  assert.ok(invented.unsupported.some(item => item.mandatory));
+});
+
 test("area aliases, typo tolerance and unavailable amenities", () => {
-  for (const alias of ["dhanmondy", "ধানমন্ডি", "Dhanmondi"]) {
+  for (const alias of ["dhanmondy", "ধানমন্ডি", "ধানমন্ডিতে", "Dhanmondi te", "Dhanmondi"]) {
     const r = validateInterpretation(alias, output([constraint("area", "Dhanmondi", alias)]), catalog);
     assert.equal(r.filters.areaId, 2);
   }
   const r = validateInterpretation("helipad in Atlantis", output([constraint("amenity", "helipad", "helipad"), constraint("area", "Atlantis", "Atlantis")]), catalog);
   assert.equal(r.unsupported.length, 2);
   assert.deepEqual(r.filters, {});
+});
+
+test("provider schema avoids the bounded-array enum rejection while local validation retains its limit", () => {
+  assert.equal(searchOutputJsonSchema.properties.constraints.maxItems, undefined);
+  assert.equal(searchOutputJsonSchema.properties.unsupported.maxItems, undefined);
+  assert.ok(searchOutputJsonSchema.properties.constraints.items.properties.field.enum.includes("maxRent"));
+  assert.equal(modelInterpretationSchema.safeParse(output(Array.from({ length: 33 }, () => constraint("bedrooms", "3", "3 bedrooms")))).success, false);
 });
 
 test("preferences are never applied as mandatory filters; transit remains unsupported", () => {

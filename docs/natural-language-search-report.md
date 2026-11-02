@@ -1,6 +1,6 @@
 # Multilingual natural-language property search
 
-Implemented and verified locally on 2 November 2026. No migration, deployment or production database write was performed. Existing user changes in graphify/brag output were left untouched.
+Initial implementation verified on 2 November 2026 and deployed as bed38f2. A provider-schema correction was verified on 3 November 2026. No migration or production database write is required. Existing user changes in graphify/brag output were left untouched.
 
 ## Architecture and behavior
 
@@ -20,14 +20,14 @@ ListingsPage offers a separate natural-language mode. Interpretation occurs only
 
 | Check | Result |
 | --- | --- |
-| Safe server suite: `cd server; npm test` | **104 passed, 0 failed**, 17.24 seconds on final run |
+| Safe server suite: `cd server; npm test` | **107 passed, 0 failed** after the provider-schema regression fixes |
 | Frontend utility tests: `node server/node_modules/tsx/dist/cli.mjs --test client/tests/naturalLanguageSearch.test.ts` | **7 passed, 0 failed** |
 | Server production build: `cd server; npm run build` | Passed |
 | Client production build: `cd client; npm run build` | Passed; existing large-chunk warning (~674 KB JS before gzip) |
 | Client lint: `cd client; npm run lint` | Exit 0; four existing warnings in unrelated files, none in added feature files |
 | `git diff --check` | Passed |
 
-The new backend coverage comprises 20 unit tests plus 17 nested integration cases (38 tests including the integration parent). Integration tests execute real PostgreSQL SQL in isolated PGlite with pg_trgm and the project's migrations/seed catalogs. The default test runner excludes the legacy suites that write to DATABASE_URL and supplies an unreachable test-only DATABASE_URL.
+The new backend coverage comprises 23 unit tests plus 17 nested integration cases (41 tests including the integration parent). Integration tests execute real PostgreSQL SQL in isolated PGlite with pg_trgm and the project's migrations/seed catalogs. The default test runner excludes the legacy suites that write to DATABASE_URL and supplies an unreachable test-only DATABASE_URL.
 
 Coverage includes English/Bangla/Banglish equivalents; Bangla numerals; k/hajar/thousand/lakh/BDT; exact/minimum bedrooms; two-sided rent; aliases/typos; valid/unavailable amenities; transit proximity; preferences/mandatory conditions; hallucinated prices/evidence; reversed comparisons/pet policy; amenity exclusions; manual conflicts; empty matches; malformed/truncated/provider-error responses; hung provider/catalog deadlines; input limits; rate limits; authorization; approved visibility; SQL binding; and cursor pagination. Hand-authored model-response fixtures test the validation contract, **not model accuracy**.
 
@@ -37,7 +37,9 @@ Browser QA used a temporary synthetic API backed by no database connection. It v
 
 The checked-in `server/scripts/search-evaluation.json` contains 12 manually specified expected-filter cases. The live evaluator uses this synthetic catalog and never opens a database connection.
 
-Final recorded run of the first three equivalent English, Bangla and Banglish cases against `gemini-3.5-flash-lite`: **0/3 usable interpretations; all three fell back at the configured deadline**. Latencies were **5002, 5015 and 5012 ms** (median 5012 ms; empirical p95 5015 ms for this tiny sample). See `server/scripts/search-evaluation-results.json`. Earlier direct diagnostics also observed HTTP 503 “high demand,” a generic HTTP 400, and timeouts. The provider JSON Schema was restricted to its documented supported subset during diagnosis. No successful live interpretation was obtained, so live semantic accuracy and successful request latency remain unverified. Do not treat fallback counts as semantic accuracy measurements.
+The initial provider request could time out or fail with HTTP 400. A controlled comparison on 3 November isolated the schema complexity issue: the constraints array's `maxItems: 32` combined with its field enum was rejected by Gemini. Removing the array bound from the provider schema produced successful constrained output; Zod still enforces the 32-item bound locally. Provider schema enums and strict object validation remain. The follow-up also handles Bengali locatives (`ধানমন্ডিতে`), equivalent Bangla/ASCII numeric evidence, and upper-bound range separators (`থেকে` / `theke`). The model catalog now sends canonical names without internal IDs, with explicit instructions for area names, parking/garage aliases and negative pet policies.
+
+Final live evaluation of all **12 manually specified fixtures: 12/12 passed** against `gemini-3.5-flash-lite` with a 10-second timeout. This includes the equivalent English, Bangla and Banglish requests, two-sided rent ranges, floors, pet policies, aliases, unsupported transit/amenities and optional parking. Measured median latency was **1557 ms** and empirical p95 **9007 ms** (range **934–9007 ms**). See `server/scripts/search-evaluation-results.json` for each expected/actual result. This is a small synthetic fixture evaluation, not a general accuracy or production latency guarantee. Earlier failures are retained here as investigation history rather than described as successful requests.
 
 Synthetic route integration requests in the final suite took about 15 ms for interpretation with a stubbed provider and 25–45 ms for rate-limited/disabled paths, excluding database fixture startup. These local in-process measurements do not predict network or production latency.
 
@@ -70,7 +72,7 @@ The adapter follows [Gemini structured-output guidance](https://ai.google.dev/ge
 
 ## Known limitations
 
-- Live provider generation was unavailable during verification; this feature is not proven against live model outputs yet.
+- Live provider availability and latency vary. The 12-case fixture run passed with a 10-second timeout, including two requests above five seconds; production should use SEARCH_AI_TIMEOUT_MS=10000 when enabling search.
 - Model omissions and unfamiliar language remain possible. Conservative evidence/alias/semantic guards can report a legitimate but unfamiliar expression as unverified; they are not a complete grammar or an accuracy guarantee.
 - Transit/school distances, commute times, alternative locations, amenity exclusions, and other unmodeled conditions cannot be verified. Preferences are informational.
 - Interpreted state is kept in the page session; reloading requires submitting again. Ordinary URL/manual filter behavior is retained.

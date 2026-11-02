@@ -1,7 +1,8 @@
 // Conservative semantic checks complement structured output: ambiguity is reported,
 // never converted into a weaker constraint. These are guards, not a replacement search parser.
 function context(query: string, evidence: string) {
-  const index = query.toLowerCase().indexOf(evidence.toLowerCase());
+  const fold = (text: string) => text.toLowerCase().replace(/[০-৯]/g, digit => String("০১২৩৪৫৬৭৮৯".indexOf(digit)));
+  const index = fold(query).indexOf(fold(evidence));
   return { before: query.slice(Math.max(0, index - 45), index).toLowerCase(),
     after: query.slice(index + evidence.length, index + evidence.length + 45).toLowerCase(),
     evidence: evidence.toLowerCase() };
@@ -45,7 +46,7 @@ export function semanticConflict(query: string, field: string, evidence: string,
     c.before += c.evidence.slice(0, amount.index);
     c.after = c.evidence.slice(amount.index! + amount[0].length) + c.after;
     // Range position takes precedence over a nearby upper/lower operator.
-    const rangeBefore = /(?:between|from|থেকে|theke)\s*(?:BDT|tk|৳)?\s*$/i.test(c.before);
+    const rangeBefore = /(?:between|from)\s*(?:BDT|tk|৳)?\s*$/i.test(c.before);
     const rangeAfter = /^\s*(?:টাকা|taka)?\s*(?:and|to|থেকে|theke|[-–])/i.test(c.after);
     const upperRange = /(?:and|to|থেকে|theke|[-–])\s*(?:BDT|tk|৳)?\s*$/i.test(c.before) && /\d|[০-৯]/.test(c.before);
     if (rangeBefore || rangeAfter) return field !== "minRent";

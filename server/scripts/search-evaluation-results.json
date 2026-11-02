@@ -1,10 +1,10 @@
 {
-  "date": "2026-11-02T17:45:56.726Z",
+  "date": "2026-11-02T18:11:03.570Z",
   "model": "gemini-3.5-flash-lite",
-  "sampleSize": 3,
-  "passed": 0,
-  "medianMs": 5012,
-  "p95Ms": 5015,
+  "sampleSize": 12,
+  "passed": 12,
+  "medianMs": 1557,
+  "p95Ms": 9007,
   "scope": "Synthetic small fixture set; not a general accuracy claim",
   "cases": [
     {
@@ -18,12 +18,20 @@
           "Elevator"
         ]
       },
-      "actual": {},
-      "status": "fallback",
+      "actual": {
+        "bedrooms": 3,
+        "areaId": 2,
+        "areaName": "Dhanmondi",
+        "maxRent": 30000,
+        "amenityNames": [
+          "Elevator"
+        ]
+      },
+      "status": "interpreted",
       "unsupported": [],
       "preferences": [],
-      "latencyMs": 5002,
-      "pass": false
+      "latencyMs": 4775,
+      "pass": true
     },
     {
       "query": "ধানমন্ডিতে ঠিক ৩ বেডরুম ৩০ হাজার টাকার মধ্যে লিফট চাই",
@@ -36,12 +44,20 @@
           "Elevator"
         ]
       },
-      "actual": {},
-      "status": "fallback",
+      "actual": {
+        "areaId": 2,
+        "areaName": "Dhanmondi",
+        "bedrooms": 3,
+        "maxRent": 30000,
+        "amenityNames": [
+          "Elevator"
+        ]
+      },
+      "status": "interpreted",
       "unsupported": [],
       "preferences": [],
-      "latencyMs": 5015,
-      "pass": false
+      "latencyMs": 9007,
+      "pass": true
     },
     {
       "query": "Dhanmondi te exactly 3 bedroom 30 hajar er moddhe lift chai",
@@ -54,12 +70,228 @@
           "Elevator"
         ]
       },
-      "actual": {},
-      "status": "fallback",
+      "actual": {
+        "areaId": 2,
+        "areaName": "Dhanmondi",
+        "bedrooms": 3,
+        "maxRent": 30000,
+        "amenityNames": [
+          "Elevator"
+        ]
+      },
+      "status": "interpreted",
       "unsupported": [],
       "preferences": [],
-      "latencyMs": 5012,
-      "pass": false
+      "latencyMs": 1088,
+      "pass": true
+    },
+    {
+      "query": "At least 2 bedrooms in Gulshan between BDT 20,000 and 40 thousand",
+      "expected": {
+        "areaId": 4,
+        "areaName": "Gulshan",
+        "minBedrooms": 2,
+        "minRent": 20000,
+        "maxRent": 40000
+      },
+      "actual": {
+        "minBedrooms": 2,
+        "areaId": 4,
+        "areaName": "Gulshan",
+        "minRent": 20000,
+        "maxRent": 40000
+      },
+      "status": "interpreted",
+      "unsupported": [],
+      "preferences": [],
+      "latencyMs": 1557,
+      "pass": true
+    },
+    {
+      "query": "গুলশানে কমপক্ষে ২ বেডরুম ২০ হাজার থেকে ৪০ হাজার টাকার মধ্যে",
+      "expected": {
+        "areaId": 4,
+        "areaName": "Gulshan",
+        "minBedrooms": 2,
+        "minRent": 20000,
+        "maxRent": 40000
+      },
+      "actual": {
+        "areaId": 4,
+        "areaName": "Gulshan",
+        "minBedrooms": 2,
+        "minRent": 20000,
+        "maxRent": 40000
+      },
+      "status": "interpreted",
+      "unsupported": [],
+      "preferences": [],
+      "latencyMs": 1600,
+      "pass": true
+    },
+    {
+      "query": "Gulshan e minimum 2 bed 20 hajar theke 40k rent",
+      "expected": {
+        "areaId": 4,
+        "areaName": "Gulshan",
+        "minBedrooms": 2,
+        "minRent": 20000,
+        "maxRent": 40000
+      },
+      "actual": {
+        "areaId": 4,
+        "areaName": "Gulshan",
+        "minBedrooms": 2,
+        "minRent": 20000,
+        "maxRent": 40000
+      },
+      "status": "interpreted",
+      "unsupported": [],
+      "preferences": [],
+      "latencyMs": 1278,
+      "pass": true
+    },
+    {
+      "query": "3 bedrooms in Dhanmondy with parking under 1.5 lakh",
+      "expected": {
+        "areaId": 2,
+        "areaName": "Dhanmondi",
+        "bedrooms": 3,
+        "maxRent": 150000,
+        "amenityNames": [
+          "Garage"
+        ]
+      },
+      "actual": {
+        "bedrooms": 3,
+        "areaId": 2,
+        "areaName": "Dhanmondi",
+        "amenityNames": [
+          "Garage"
+        ],
+        "maxRent": 150000
+      },
+      "status": "interpreted",
+      "unsupported": [],
+      "preferences": [],
+      "latencyMs": 934,
+      "pass": true
+    },
+    {
+      "query": "ধানমন্ডিতে ২ বেডরুম ১ বাথরুম ৩ তলায় পোষা বিড়াল রাখা যাবে",
+      "expected": {
+        "areaId": 2,
+        "areaName": "Dhanmondi",
+        "bedrooms": 2,
+        "bathrooms": 1,
+        "floor": 3,
+        "pets": true
+      },
+      "actual": {
+        "areaId": 2,
+        "areaName": "Dhanmondi",
+        "bedrooms": 2,
+        "bathrooms": 1,
+        "floor": 3,
+        "pets": true
+      },
+      "status": "interpreted",
+      "unsupported": [],
+      "preferences": [],
+      "latencyMs": 1311,
+      "pass": true
+    },
+    {
+      "query": "2 bedrooms ground floor in Dhanmondi pets not allowed",
+      "expected": {
+        "areaId": 2,
+        "areaName": "Dhanmondi",
+        "bedrooms": 2,
+        "floor": 0,
+        "pets": false
+      },
+      "actual": {
+        "bedrooms": 2,
+        "floor": 0,
+        "areaId": 2,
+        "areaName": "Dhanmondi",
+        "pets": false
+      },
+      "status": "interpreted",
+      "unsupported": [],
+      "preferences": [],
+      "latencyMs": 1021,
+      "pass": true
+    },
+    {
+      "query": "3 bedrooms in Dhanmondi near a metro station",
+      "expected": {
+        "areaId": 2,
+        "areaName": "Dhanmondi",
+        "bedrooms": 3
+      },
+      "actual": {
+        "bedrooms": 3,
+        "areaId": 2,
+        "areaName": "Dhanmondi"
+      },
+      "status": "interpreted",
+      "unsupported": [
+        {
+          "requirement": "near a metro station",
+          "mandatory": true,
+          "reason": "Distance to metro station is not supported"
+        }
+      ],
+      "preferences": [],
+      "latencyMs": 1319,
+      "pass": true
+    },
+    {
+      "query": "3 bedrooms in Dhanmondi with a helipad",
+      "expected": {
+        "areaId": 2,
+        "areaName": "Dhanmondi",
+        "bedrooms": 3
+      },
+      "actual": {
+        "bedrooms": 3,
+        "areaId": 2,
+        "areaName": "Dhanmondi"
+      },
+      "status": "interpreted",
+      "unsupported": [
+        {
+          "requirement": "helipad",
+          "mandatory": true,
+          "reason": "Unsupported amenity"
+        }
+      ],
+      "preferences": [],
+      "latencyMs": 7146,
+      "pass": true
+    },
+    {
+      "query": "3 bedrooms in Dhanmondi under ৳২৫০০০; parking preferred",
+      "expected": {
+        "areaId": 2,
+        "areaName": "Dhanmondi",
+        "bedrooms": 3,
+        "maxRent": 25000
+      },
+      "actual": {
+        "bedrooms": 3,
+        "areaId": 2,
+        "areaName": "Dhanmondi",
+        "maxRent": 25000
+      },
+      "status": "interpreted",
+      "unsupported": [],
+      "preferences": [
+        "parking"
+      ],
+      "latencyMs": 2224,
+      "pass": true
     }
   ]
 }

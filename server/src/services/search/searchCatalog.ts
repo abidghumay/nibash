@@ -40,6 +40,14 @@ export function resolveCatalogValue<T extends { name: string }>(text: string, re
   const needle = normalizeCatalogText(canonicalAlias(text));
   const exact = records.find(row => normalizeCatalogText(row.name) === needle);
   if (exact || !fuzzy || needle.length < 5) return exact;
+  // Bengali locatives and Banglish postpositions are part of a natural query,
+  // not a different location. Strip only when the remaining name is verified.
+  const stem = text.trim().replace(/(?:তে|য়ে|য়|এর|ে|র|te|er|e)$/iu, "").trim();
+  if (stem !== text.trim()) {
+    const canonicalStem = normalizeCatalogText(canonicalAlias(stem));
+    const inflected = records.find(row => normalizeCatalogText(row.name) === canonicalStem);
+    if (inflected) return inflected;
+  }
   const candidates = records.filter(row => distance(needle, normalizeCatalogText(row.name)) <= (needle.length >= 8 ? 2 : 1));
   return candidates.length === 1 ? candidates[0] : undefined;
 }
