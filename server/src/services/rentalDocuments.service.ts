@@ -158,7 +158,7 @@ export async function renderRentalPdf(row: RentalDocument): Promise<Buffer> {
         pdf
           .font(/[\u0980-\u09ff]/.test(field.value) ? "bangla" : "text")
           .fontSize(10);
-        return title + pdf.heightOfString(field.value, { width }) + 17;
+        return title + pdf.heightOfString(field.value, { width, lineGap: 3 }) + 17;
       }),
     );
     if (pdf.y + height > 710) {
