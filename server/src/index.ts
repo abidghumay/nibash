@@ -15,6 +15,8 @@ import dashboardRoutes from "./routes/dashboard.route.js";
 import incomeRoutes from "./routes/income.route.js";
 import areaRoutes from "./routes/area.route.js";
 import notificationRoutes from "./routes/notification.route.js";
+import rentalRoutes from './routes/rental.route.js';
+import { startRentalDocumentWorker } from './services/rentalDocuments.service.js';
 import { generateInboxReminders } from "./services/notification.service.js";
 import { startDocumentWorker } from "./services/documentAiJobs.service.js";
 
@@ -38,6 +40,7 @@ app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/owners/me/income", incomeRoutes);
 app.use("/api/areas", areaRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use('/api/rental',rentalRoutes);
 
 // root route
 app.get("/", (_req, res) => {
@@ -59,6 +62,7 @@ app.get("/health", async (_req, res) => {
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   startDocumentWorker();
+  startRentalDocumentWorker();
   void generateInboxReminders().catch(err => console.error("Inbox reminder catch-up failed", err));
   console.log(`Server running on port ${PORT}`);
 });

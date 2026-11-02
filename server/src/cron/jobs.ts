@@ -15,10 +15,10 @@ cron.schedule("5 0 * * *", async () => {
 cron.schedule("0 0 * * *", async () => {
   // runs every day at midnight
   try {
-    const result = await pool.query(
-      "UPDATE contracts SET status='completed' WHERE end_date < (NOW() AT TIME ZONE 'Asia/Dhaka')::date AND status='signed' RETURNING id",
-    ); // The contract trigger creates inbox messages for both parties.
-    console.log(`Updated ${result.rowCount} contracts to completed`);
+    // Expiry is a date, not proof of vacancy. Only dual-party closure releases a listing.
+    await pool.query("UPDATE contracts SET occupancy_state='occupied' WHERE status='signed' AND occupancy_state='upcoming' AND start_date <= (NOW() AT TIME ZONE 'Asia/Dhaka')::date");
+    await pool.query('CALL generate_monthly_payments()');
+    await pool.query('CALL mark_overdue_payments()');
 
     await pool.query(
       "DELETE FROM revoked_tokens WHERE expires_at < NOW()",

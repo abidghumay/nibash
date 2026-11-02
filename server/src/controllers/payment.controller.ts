@@ -4,6 +4,7 @@ import {
   updatePaymentSchema,
 } from "../schemas/payment.schema.js";
 import * as paymentService from "../services/payment.service.js";
+import { claimSchema } from '../schemas/rental.schema.js';
 
 export async function create(req: Request, res: Response) {
   if (!req.user) {
@@ -54,7 +55,9 @@ export async function payByCash(req: Request, res: Response) {
     res.status(401).json({ error: "unauthorized" });
     return;
   }
-  await paymentService.payByCash(req.user.id, req.params.payment_id as string);
+  const parsed=claimSchema.safeParse(req.body??{});
+  if(!parsed.success){res.status(400).json({error:parsed.error.issues[0].message});return;}
+  await paymentService.payByCash(req.user.id, req.params.payment_id as string,parsed.data.amount,parsed.data.request_key);
   res.json({ message: "marked as paid by cash, awaiting owner verification" });
 }
 

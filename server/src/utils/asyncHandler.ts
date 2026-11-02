@@ -13,8 +13,12 @@ export const asyncHandler =
     } catch (err) {
       if (err instanceof AppError) {
         res.status(err.statusCode).json({ error: err.message }); // App_error
+      } else if (err && typeof err === 'object' && 'code' in err && err.code === 'P0001' && err instanceof Error) {
+        res.status(/not authorized/i.test(err.message) ? 403 : 400).json({ error: err.message });
+      } else if (err && typeof err === 'object' && 'code' in err && err.code === '23505') {
+        res.status(409).json({ error: 'A conflicting record already exists. Refresh and try again.' });
       } else {
-        console.error(err);
+        console.error('Request failed', err instanceof Error ? err.name : 'unknown_error');
         res.status(500).json({ error: "something went wrong" });
       }
     }

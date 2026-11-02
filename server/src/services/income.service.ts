@@ -119,11 +119,11 @@ export async function getOverallIncome(
       ), 0)::numeric AS current_month_rent_received,
       COUNT(DISTINCT c.id) FILTER (WHERE p.id IS NOT NULL)::int AS income_generating_contracts,
       COUNT(DISTINCT l.id) FILTER (WHERE p.id IS NOT NULL)::int AS income_generating_listings,
-      COUNT(DISTINCT c.id) FILTER (WHERE c.status IN ('signed', 'active'))::int AS active_contracts_count,
+      COUNT(DISTINCT coalesce(c.root_contract_id,c.id)) FILTER (WHERE c.status IN ('signed', 'renewed') AND c.occupancy_state<>'closed')::int AS active_contracts_count,
       COUNT(DISTINCT l.id)::int AS total_owned_listings
     FROM listings l
     LEFT JOIN contracts c ON c.listing_id = l.id
-    LEFT JOIN payments p ON p.contract_id = c.id
+    LEFT JOIN rental_income_payments p ON p.contract_id = c.id
                         AND p.status = 'confirmed'
                         ${dateConditions}
     WHERE l.owner_id = $1
@@ -178,14 +178,14 @@ export async function getListingIncome(
       COALESCE(t.rent, 0)::numeric AS advertised_rent,
       COALESCE(SUM(p.amount), 0)::numeric AS total_rent_received,
       COUNT(DISTINCT c.id) FILTER (WHERE p.id IS NOT NULL)::int AS contributing_contracts_count,
-      COUNT(DISTINCT c.id) FILTER (WHERE c.status IN ('signed', 'active'))::int AS active_contracts_count,
+      COUNT(DISTINCT coalesce(c.root_contract_id,c.id)) FILTER (WHERE c.status IN ('signed', 'renewed') AND c.occupancy_state<>'closed')::int AS active_contracts_count,
       MAX(p.paid_at) AS most_recent_payment_date
     FROM listings l
     JOIN areas a ON a.id = l.area_id
     LEFT JOIN initial_terms it ON it.listing_id = l.id
     LEFT JOIN terms t ON t.id = it.terms_id
     LEFT JOIN contracts c ON c.listing_id = l.id
-    LEFT JOIN payments p ON p.contract_id = c.id
+    LEFT JOIN rental_income_payments p ON p.contract_id = c.id
                         AND p.status = 'confirmed'
                         ${dateConditions}
     WHERE l.owner_id = $1
@@ -285,7 +285,7 @@ export async function getContractIncome(
     JOIN users u ON u.id = c.tenant_id
     JOIN agreements ag ON ag.terms_id = c.agreement_id
     JOIN terms t ON t.id = ag.terms_id
-    LEFT JOIN payments p ON p.contract_id = c.id
+    LEFT JOIN rental_income_payments p ON p.contract_id = c.id
                         AND p.status = 'confirmed'
                         ${dateConditions}
     WHERE l.owner_id = $1
@@ -351,7 +351,7 @@ export async function getOwnerPaymentsLedger(
   // 1. Total count query for pagination
   const countSql = `
     SELECT COUNT(*)::int AS total
-    FROM payments p
+    FROM rental_income_payments p
     JOIN contracts c ON c.id = p.contract_id
     JOIN listings l ON l.id = c.listing_id
     WHERE l.owner_id = $1
@@ -373,7 +373,7 @@ export async function getOwnerPaymentsLedger(
 
   const sql = `
     SELECT
-      p.id AS payment_id,
+      p.id AS payment_id,p.event_id,
       p.contract_id,
       c.listing_id,
       l.title AS listing_title,
@@ -386,7 +386,7 @@ export async function getOwnerPaymentsLedger(
       p.paid_at,
       p.bkash_transaction_id,
       p.sslcommerz_transaction_id
-    FROM payments p
+    FROM rental_income_payments p
     JOIN contracts c ON c.id = p.contract_id
     JOIN listings l ON l.id = c.listing_id
     JOIN users u ON u.id = c.tenant_id
@@ -394,7 +394,7 @@ export async function getOwnerPaymentsLedger(
       AND p.status = 'confirmed'
       ${dateConditions}
       ${extraFilters}
-    ORDER BY p.paid_at DESC NULLS LAST, p.id DESC
+    ORDER BY p.paid_at DESC NULLS LAST, p.id DESC,p.event_id DESC NULLS LAST
     LIMIT $${limitIdx} OFFSET $${offsetIdx}
   `;
 
@@ -402,6 +402,7 @@ export async function getOwnerPaymentsLedger(
 
   const payments = result.rows.map((row: any) => ({
     id: row.payment_id,
+    eventId: row.event_id??null,
     contractId: row.contract_id,
     listingId: row.listing_id,
     listingTitle: row.listing_title,

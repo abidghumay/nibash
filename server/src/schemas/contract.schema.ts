@@ -1,50 +1,33 @@
 import { z } from "zod";
-
+import { money, dateOnly } from "./rental.schema.js";
 export const createContractSchema = z
   .object({
-    listing_id: z.number().positive("listing id must be a positive number"),
-    tenant_id: z.number().positive("tenant id must be a positive number"),
-    start_date: z
-      .string()
-      .refine(
-        (val) => !isNaN(Date.parse(val)),
-        "start date must be a valid date",
-      ),
-    end_date: z
-      .string()
-      .refine(
-        (val) => !isNaN(Date.parse(val)),
-        "end date must be a valid date",
-      ),
-    rent: z.number().positive("rent must be a positive number"),
-    electricity_bill: z
-      .number()
-      .nonnegative("electricity bill must be a non-negative number"),
-    water_bill: z
-      .number()
-      .nonnegative("water bill must be a non-negative number"),
-    service_charge: z
-      .number()
-      .nonnegative("service charge must be a non-negative number"),
+    listing_id: z.number().int().positive(),
+    tenant_id: z.number().int().positive(),
+    start_date: dateOnly,
+    end_date: dateOnly,
+    rent: money.refine((v) => Number(v) > 0, "Rent must be positive"),
+    electricity_bill: money,
+    water_bill: money,
+    service_charge: money,
     pet_allowed: z.boolean(),
-    security_deposit: z
-      .number()
-      .nonnegative("security deposit must be a non-negative number"),
-    monthly_due_date: z
-      .number()
-      .int()
-      .min(1, "monthly due date must be between 1 and 28")
-      .max(28, "monthly due date must be between 1 and 28"),
+    security_deposit: money
+      .default("0")
+      .refine(
+        (v) => Number(v) === 0,
+        "New security deposits are unsupported under Section 10; use zero",
+      ),
+    advance_rent: money.default("0"),
+    monthly_due_date: z.number().int().min(1).max(28),
+    previous_contract_id: z.number().int().positive().optional(),
   })
-  .refine((data) => new Date(data.start_date) < new Date(data.end_date), {
+  .strict()
+  .refine((v) => v.start_date < v.end_date, {
     message: "end_date must be after start_date",
     path: ["end_date"],
   });
-
 export type CreateContractInput = z.infer<typeof createContractSchema>;
-
-export const updateContractSchema = z.object({
-  status: z.enum(["signed"], { message: "status must be either signed " }),
-});
-
+export const updateContractSchema = z
+  .object({ status: z.literal("signed") })
+  .strict();
 export type UpdateContractInput = z.infer<typeof updateContractSchema>;

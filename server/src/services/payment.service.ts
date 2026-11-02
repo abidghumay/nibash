@@ -1,142 +1,191 @@
+import { randomUUID } from "node:crypto";
 import { pool } from "../db/pool.js";
 import { AppError } from "../errors/AppError.js";
-import { CreatePaymentInput } from "../schemas/payment.schema.js";
+import type { CreatePaymentInput } from "../schemas/payment.schema.js";
 
 export async function createPayment(
   tenantId: number,
   data: CreatePaymentInput,
 ) {
-  const {
-    contract_id,
-    amount,
-    payment_method,
-    bKash_transaction_id,
-    SSLCommerz_transaction_id,
-  } = data;
-
-  const contract = await pool.query(
-    "SELECT 1 FROM contracts WHERE id=$1 AND tenant_id=$2 AND status='signed'",
-    [contract_id, tenantId],
+  // Reuse an issued invoice; clients cannot invent obligations or alter historic amounts.
+  const due = await pool.query(
+    `SELECT p.id FROM payments p JOIN contracts c ON c.id=p.contract_id
+    WHERE c.id=$1 AND c.tenant_id=$2 AND p.status IN ('pending','overdue') ORDER BY p.due_date NULLS LAST,p.id LIMIT 1`,
+    [data.contract_id, tenantId],
   );
-  if (contract.rows.length === 0)
-    throw new AppError(403, "this contract doesnt exist");
-
-  const rent = await pool.query(
-    "SELECT t.rent FROM contracts c JOIN agreements a ON a.terms_id=c.agreement_id JOIN terms t ON t.id=a.terms_id WHERE c.id=$1",
-    [contract_id],
-  );
-  if (amount !== parseFloat(rent.rows[0].rent))
-    throw new AppError(400, "amount should be equal to rent");
-
-  await pool.query(
-    "INSERT INTO payments (contract_id,amount,payment_method,status,bKash_transaction_id,SSLCommerz_transaction_id) VALUES ($1,$2,$3,'pending',$4,$5)",
-    [
-      contract_id,
-      amount,
-      payment_method,
-      bKash_transaction_id,
-      SSLCommerz_transaction_id,
-    ],
-  );
+  if (!due.rows.length)
+    throw new AppError(400, "No outstanding invoice is available");
+  await pool.query("SELECT claim_rental_payment($1,$2,$3,$4,$5)", [
+    tenantId,
+    due.rows[0].id,
+    String(data.amount),
+    data.payment_method,
+    randomUUID(),
+  ]);
 }
-
 export async function getPaymentsForContract(
   userId: number,
   contractId: string,
 ) {
-  const owner = await pool.query(
-    "SELECT 1 FROM contracts c JOIN listings l ON l.id=c.listing_id WHERE l.owner_id=$1 AND c.id=$2",
-    [userId, contractId],
+  const allowed = await pool.query(
+    `SELECT 1 FROM contracts c JOIN listings l ON l.id=c.listing_id
+    WHERE c.id=$1 AND (c.tenant_id=$2 OR l.owner_id=$2)`,
+    [contractId, userId],
   );
-  const tenant = await pool.query(
-    "SELECT 1 FROM contracts WHERE tenant_id=$1 AND id=$2",
-    [userId, contractId],
-  );
-  if (owner.rows.length === 0 && tenant.rows.length === 0) {
-    throw new AppError(403, "you are not the owner or tenant of this contract");
-  }
-  const result = await pool.query(
-    "SELECT * FROM payments WHERE contract_id=$1 ORDER BY billing_month ASC NULLS LAST, due_date ASC NULLS LAST, id ASC",
-    [contractId],
-  );
-  return result.rows;
+  if (!allowed.rows.length)
+    throw new AppError(403, "Not authorized for this contract");
+  return (
+    await pool.query(
+      `SELECT p.id,p.contract_id,p.amount,p.category,p.payment_method,p.status,p.billing_month,p.due_date,p.paid_at,
+    CASE WHEN p.status='confirmed' AND NOT EXISTS(SELECT 1 FROM payment_events e WHERE e.payment_id=p.id) AND NOT EXISTS(SELECT 1 FROM advance_allocations a WHERE a.rent_payment_id=p.id) THEN p.amount ELSE rental_received(p.id) END AS confirmed_amount,
+    rental_credited(p.id) AS advance_credit,rental_outstanding(p.id) AS outstanding_balance
+    FROM payments p WHERE p.contract_id IN (SELECT sibling.id FROM contracts sibling WHERE coalesce(sibling.root_contract_id,sibling.id)=(SELECT coalesce(root_contract_id,id) FROM contracts WHERE id=$1)) ORDER BY billing_month ASC NULLS LAST,due_date ASC NULLS LAST,p.id`,
+      [contractId],
+    )
+  ).rows;
 }
-
-export async function payByCash(tenantId: number, paymentId: string) {
-  const payment = await pool.query(
-    `SELECT p.id, p.status, c.tenant_id
-     FROM payments p
-     JOIN contracts c ON p.contract_id = c.id
-     WHERE p.id = $1`,
-    [paymentId],
+export async function payByCash(
+  tenantId: number,
+  paymentId: string,
+  amount?: string,
+  requestKey?: string,
+) {
+  const pending = await pool.query(
+    `SELECT rental_outstanding(p.id) AS remaining,e.id,e.amount AS claim_amount,e.request_key
+    FROM payments p JOIN contracts c ON c.id=p.contract_id
+    LEFT JOIN payment_events e ON e.payment_id=p.id AND e.status='pending' WHERE p.id=$1 AND c.tenant_id=$2`,
+    [paymentId, tenantId],
   );
-  if (payment.rows.length === 0) {
-    throw new AppError(404, "payment not found");
+  if (!pending.rows.length)
+    throw new AppError(403, "Not authorized for this payment");
+  const row = pending.rows[0];
+  if (requestKey) {
+    const existing = await pool.query(
+      "SELECT amount,method FROM payment_events WHERE payment_id=$1 AND request_key=$2",
+      [paymentId, requestKey],
+    );
+    if (existing.rows.length) {
+      await pool.query("SELECT claim_rental_payment($1,$2,$3,'Cash',$4)", [
+        tenantId,
+        paymentId,
+        amount ?? existing.rows[0].amount,
+        requestKey,
+      ]);
+      return;
+    }
   }
-  if (payment.rows[0].tenant_id !== tenantId) {
-    throw new AppError(403, "you are not the tenant of this contract");
-  }
-  if (payment.rows[0].status !== "pending" && payment.rows[0].status !== "overdue") {
-    throw new AppError(400, "only pending or overdue payments can be marked as paid by cash");
-  }
-
-  await pool.query(
-    "UPDATE payments SET payment_method = 'Cash' WHERE id = $1",
-    [paymentId],
-  );
+  if (row.id && !amount && !requestKey) return;
+  await pool.query("SELECT claim_rental_payment($1,$2,$3,'Cash',$4)", [
+    tenantId,
+    paymentId,
+    amount ?? row.remaining,
+    requestKey ?? randomUUID(),
+  ]);
 }
-
 export async function rejectCash(ownerId: number, paymentId: string) {
-  const payment = await pool.query(
-    `SELECT p.status AS payment_status, p.contract_id
-     FROM payments p
-     JOIN contracts c ON p.contract_id=c.id
-     JOIN listings l ON l.id=c.listing_id
-     WHERE l.owner_id=$1 AND p.id=$2`,
-    [ownerId, paymentId],
-  );
-  if (payment.rows.length === 0)
-    throw new AppError(403, "you are not the owner of this contract");
-  if (payment.rows[0].payment_status !== "pending" && payment.rows[0].payment_status !== "overdue")
-    throw new AppError(400, "only pending or overdue payments can be updated");
-
-  await pool.query(
-    "UPDATE payments SET payment_method = NULL WHERE id = $1",
-    [paymentId],
-  );
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const allowed = await client.query(
+      `SELECT p.id FROM payments p JOIN contracts c ON c.id=p.contract_id JOIN listings l ON l.id=c.listing_id
+      WHERE p.id=$1 AND l.owner_id=$2 AND p.status IN ('pending','overdue') FOR UPDATE OF p`,
+      [paymentId, ownerId],
+    );
+    if (!allowed.rows.length)
+      throw new AppError(403, "Not authorized for this pending payment");
+    await client.query(
+      "UPDATE payment_events SET status='rejected' WHERE payment_id=$1 AND status='pending'",
+      [paymentId],
+    );
+    await client.query("UPDATE payments SET payment_method=NULL WHERE id=$1", [
+      paymentId,
+    ]);
+    await client.query("COMMIT");
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
 }
-
 export async function resolvePayment(
   ownerId: number,
   paymentId: string,
   status: string,
 ) {
-  const payment = await pool.query(
-    `SELECT p.status AS payment_status, p.contract_id
-         FROM payments p
-         JOIN contracts c ON p.contract_id=c.id
-         JOIN listings l ON l.id=c.listing_id
-         WHERE l.owner_id=$1 AND p.id=$2`,
-    [ownerId, paymentId],
-  );
-  if (payment.rows.length === 0)
-    throw new AppError(403, "you are not the owner of this contract");
-  if (payment.rows[0].payment_status !== "pending" && payment.rows[0].payment_status !== "overdue")
-    throw new AppError(400, "payment is already resolved");
-
-  const contract_id = payment.rows[0].contract_id;
-  if (status === "confirmed") {
-    await pool.query(
-      "UPDATE payments SET status='confirmed', paid_at=NOW() WHERE id=$1",
+  if (status === "failed") return rejectCash(ownerId, paymentId);
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    await client.query(
+      "SELECT root.id FROM contracts root JOIN contracts c ON coalesce(c.root_contract_id,c.id)=root.id JOIN payments p ON p.contract_id=c.id WHERE p.id=$1 FOR UPDATE OF root",
       [paymentId],
     );
-    await pool.query(
-      "UPDATE contracts SET paid_security_deposit=true WHERE id=$1 AND paid_security_deposit=false",
-      [contract_id],
+    const found = await client.query(
+      `SELECT p.id,p.status,p.contract_id,c.tenant_id,p.payment_method,rental_outstanding(p.id) AS remaining
+      FROM payments p JOIN contracts c ON c.id=p.contract_id JOIN listings l ON l.id=c.listing_id
+      WHERE p.id=$1 AND l.owner_id=$2 FOR UPDATE OF p`,
+      [paymentId, ownerId],
     );
-  } else {
-    await pool.query("UPDATE payments SET status='failed' WHERE id=$1", [
-      paymentId,
+    if (!found.rows.length)
+      throw new AppError(403, "Not authorized for this payment");
+    const p = found.rows[0];
+    const pending = await client.query(
+      "SELECT id,amount FROM payment_events WHERE payment_id=$1 AND status='pending'",
+      [paymentId],
+    );
+    if (
+      pending.rows.length &&
+      ((
+        await client.query(
+          "SELECT 1 FROM payment_events WHERE payment_id=$1 AND status='confirmed' LIMIT 1",
+          [paymentId],
+        )
+      ).rows.length ||
+        String(pending.rows[0].amount) !== String(p.remaining))
+    )
+      throw new AppError(
+        400,
+        "Confirm this installment by its event identifier in Rental management to avoid acknowledging a later claim on retry",
+      );
+    if (!pending.rows.length) {
+      // A retry of a fully acknowledged invoice succeeds without issuing another receipt.
+      if (p.status === "confirmed") {
+        await client.query("COMMIT");
+        return;
+      }
+      if (
+        (
+          await client.query(
+            "SELECT 1 FROM payment_events WHERE payment_id=$1 AND status='confirmed' LIMIT 1",
+            [paymentId],
+          )
+        ).rows.length
+      ) {
+        await client.query("COMMIT");
+        return;
+      }
+      // Legacy Cash claims predate payment_events. Explicit owner confirmation converts only that claim.
+      if (p.payment_method !== "Cash")
+        throw new AppError(
+          400,
+          "A tenant payment claim with a recorded method is required before confirmation",
+        );
+      const legacy = await client.query(
+        "INSERT INTO payment_events(payment_id,amount,method,claimed_by,request_key) VALUES($1,$2,'Cash',$3,$4) RETURNING id",
+        [paymentId, p.remaining, p.tenant_id, "legacy-cash:" + paymentId],
+      );
+      pending.rows.push(legacy.rows[0]);
+    }
+    await client.query("SELECT confirm_rental_payment($1,$2)", [
+      ownerId,
+      pending.rows[0].id,
     ]);
+    await client.query("COMMIT");
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
   }
 }
