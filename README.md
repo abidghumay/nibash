@@ -151,3 +151,11 @@ a separately provisioned disposable database and are excluded from that command.
 ## License
 
 TBD
+
+## Rental protection hackathon extension
+
+The November 2026 rental-management extension adds continuing-tenancy rent protection, restricted advances/deposits, confirmed installment acknowledgments, private agreement PDFs and **My Tenants**.
+
+See [the implementation report and synthetic demo](docs/rental-protection-report.md) for architecture, verification, remaining legal/operational boundaries and a repeatable demonstration.
+
+Existing installations need additive migrations **018 then 019** before running the new application. Do not replay the original destructive initialization migrations against existing data. No deployment or configured-database migration is performed automatically.
