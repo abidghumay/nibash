@@ -1,0 +1,14 @@
+[
+  {"query":"Need exactly 3 bedrooms in Dhanmondi under 30k with lift","filters":{"areaId":2,"areaName":"Dhanmondi","bedrooms":3,"maxRent":30000,"amenityNames":["Elevator"]}},
+  {"query":"ধানমন্ডিতে ঠিক ৩ বেডরুম ৩০ হাজার টাকার মধ্যে লিফট চাই","filters":{"areaId":2,"areaName":"Dhanmondi","bedrooms":3,"maxRent":30000,"amenityNames":["Elevator"]}},
+  {"query":"Dhanmondi te exactly 3 bedroom 30 hajar er moddhe lift chai","filters":{"areaId":2,"areaName":"Dhanmondi","bedrooms":3,"maxRent":30000,"amenityNames":["Elevator"]}},
+  {"query":"At least 2 bedrooms in Gulshan between BDT 20,000 and 40 thousand","filters":{"areaId":4,"areaName":"Gulshan","minBedrooms":2,"minRent":20000,"maxRent":40000}},
+  {"query":"গুলশানে কমপক্ষে ২ বেডরুম ২০ হাজার থেকে ৪০ হাজার টাকার মধ্যে","filters":{"areaId":4,"areaName":"Gulshan","minBedrooms":2,"minRent":20000,"maxRent":40000}},
+  {"query":"Gulshan e minimum 2 bed 20 hajar theke 40k rent","filters":{"areaId":4,"areaName":"Gulshan","minBedrooms":2,"minRent":20000,"maxRent":40000}},
+  {"query":"3 bedrooms in Dhanmondy with parking under 1.5 lakh","filters":{"areaId":2,"areaName":"Dhanmondi","bedrooms":3,"maxRent":150000,"amenityNames":["Garage"]}},
+  {"query":"ধানমন্ডিতে ২ বেডরুম ১ বাথরুম ৩ তলায় পোষা বিড়াল রাখা যাবে","filters":{"areaId":2,"areaName":"Dhanmondi","bedrooms":2,"bathrooms":1,"floor":3,"pets":true}},
+  {"query":"2 bedrooms ground floor in Dhanmondi pets not allowed","filters":{"areaId":2,"areaName":"Dhanmondi","bedrooms":2,"floor":0,"pets":false}},
+  {"query":"3 bedrooms in Dhanmondi near a metro station","filters":{"areaId":2,"areaName":"Dhanmondi","bedrooms":3},"unsupportedMandatory":true},
+  {"query":"3 bedrooms in Dhanmondi with a helipad","filters":{"areaId":2,"areaName":"Dhanmondi","bedrooms":3},"unsupportedMandatory":true},
+  {"query":"3 bedrooms in Dhanmondi under ৳২৫০০০; parking preferred","filters":{"areaId":2,"areaName":"Dhanmondi","bedrooms":3,"maxRent":25000},"hasPreference":true}
+]

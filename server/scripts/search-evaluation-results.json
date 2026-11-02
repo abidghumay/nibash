@@ -1,0 +1,65 @@
+{
+  "date": "2026-11-02T17:45:56.726Z",
+  "model": "gemini-3.5-flash-lite",
+  "sampleSize": 3,
+  "passed": 0,
+  "medianMs": 5012,
+  "p95Ms": 5015,
+  "scope": "Synthetic small fixture set; not a general accuracy claim",
+  "cases": [
+    {
+      "query": "Need exactly 3 bedrooms in Dhanmondi under 30k with lift",
+      "expected": {
+        "areaId": 2,
+        "areaName": "Dhanmondi",
+        "bedrooms": 3,
+        "maxRent": 30000,
+        "amenityNames": [
+          "Elevator"
+        ]
+      },
+      "actual": {},
+      "status": "fallback",
+      "unsupported": [],
+      "preferences": [],
+      "latencyMs": 5002,
+      "pass": false
+    },
+    {
+      "query": "ধানমন্ডিতে ঠিক ৩ বেডরুম ৩০ হাজার টাকার মধ্যে লিফট চাই",
+      "expected": {
+        "areaId": 2,
+        "areaName": "Dhanmondi",
+        "bedrooms": 3,
+        "maxRent": 30000,
+        "amenityNames": [
+          "Elevator"
+        ]
+      },
+      "actual": {},
+      "status": "fallback",
+      "unsupported": [],
+      "preferences": [],
+      "latencyMs": 5015,
+      "pass": false
+    },
+    {
+      "query": "Dhanmondi te exactly 3 bedroom 30 hajar er moddhe lift chai",
+      "expected": {
+        "areaId": 2,
+        "areaName": "Dhanmondi",
+        "bedrooms": 3,
+        "maxRent": 30000,
+        "amenityNames": [
+          "Elevator"
+        ]
+      },
+      "actual": {},
+      "status": "fallback",
+      "unsupported": [],
+      "preferences": [],
+      "latencyMs": 5012,
+      "pass": false
+    }
+  ]
+}

@@ -3,6 +3,7 @@ import { getPublicUrl } from "../media.service.js";
 import { parseSearchQuery } from "./parseSearchQuery.js";
 import { fuzzyMatchArea } from "./fuzzyMatchArea.js";
 import { logSearchMiss } from "./logSearchMiss.js";
+import { AppError } from "../../errors/AppError.js";
 
 export interface SearchListingsParams {
   q?: string | null;
@@ -12,6 +13,11 @@ export interface SearchListingsParams {
   areaId?: number | null;
   areaName?: string | null;
   maxRent?: number | null;
+  minRent?: number | null;
+  minBedrooms?: number | null;
+  pets?: boolean | null;
+  keywords?: string;
+  strict?: boolean;
   amenityNames?: string[];
   limit?: number;
   cursor?: string | null;
@@ -55,7 +61,7 @@ export async function searchListings(
   params: SearchListingsParams,
 ): Promise<SearchListingsResult> {
   const rawQuery = params.q?.trim() || "";
-  const parsed = parseSearchQuery(rawQuery);
+  const parsed = parseSearchQuery(params.strict ? "" : rawQuery);
 
   // 1. Resolve structured filters (explicit params override parsed values)
   const bedrooms = params.bedrooms !== undefined && params.bedrooms !== null
@@ -74,7 +80,13 @@ export async function searchListings(
     ? params.maxRent
     : parsed.maxRent;
 
-  const pets = parsed.pets;
+  const pets = params.pets ?? parsed.pets;
+  const minRent = params.minRent ?? null;
+  const minBedrooms = params.minBedrooms ?? null;
+  if ((minRent !== null && maxRent !== null && minRent > maxRent) ||
+      (bedrooms !== null && minBedrooms !== null && bedrooms < minBedrooms)) {
+    throw new AppError(400, "Conflicting rent or bedroom filters. Please resolve both requirements.");
+  }
 
   let areaId: number | null = null;
   if (params.areaId !== undefined && params.areaId !== null) {
@@ -82,13 +94,14 @@ export async function searchListings(
   } else if (params.areaName) {
     const matched = await fuzzyMatchArea(params.areaName);
     if (matched) areaId = matched.id;
+    else if (params.strict) throw new AppError(400, "The requested area could not be verified.");
   } else if (parsed.areaHint) {
     const matched = await fuzzyMatchArea(parsed.areaHint);
     if (matched) areaId = matched.id;
   }
 
   const amenityNames = params.amenityNames || [];
-  const keywords = parsed.keywords.trim();
+  const keywords = params.strict ? (params.keywords?.trim() ?? "") : parsed.keywords.trim();
   const limit = Math.min(Math.max(params.limit || 20, 1), 50);
   const cursor = decodeCursor(params.cursor);
 
@@ -104,6 +117,8 @@ export async function searchListings(
   if (bedrooms !== null) {
     conditions.push(`l.bedroom_count = ${addParam(bedrooms)}`);
   }
+  if (minBedrooms !== null) conditions.push(`l.bedroom_count >= ${addParam(minBedrooms)}`);
+  if (minRent !== null) conditions.push(`l.rent >= ${addParam(minRent)}`);
 
   if (bathrooms !== null) {
     conditions.push(`l.bathroom_count = ${addParam(bathrooms)}`);
@@ -121,8 +136,8 @@ export async function searchListings(
     conditions.push(`l.rent <= ${addParam(maxRent)}`);
   }
 
-  if (pets === true) {
-    conditions.push(`l.pet_allowed = true`);
+  if (pets !== null) {
+    conditions.push(`l.pet_allowed = ${addParam(pets)}`);
   }
 
   if (amenityNames.length > 0) {
@@ -190,6 +205,8 @@ export async function searchListings(
       if (bedrooms !== null) {
         fallbackConditions.push(`l.bedroom_count = ${addFallbackParam(bedrooms)}`);
       }
+      if (minBedrooms !== null) fallbackConditions.push(`l.bedroom_count >= ${addFallbackParam(minBedrooms)}`);
+      if (minRent !== null) fallbackConditions.push(`l.rent >= ${addFallbackParam(minRent)}`);
       if (bathrooms !== null) {
         fallbackConditions.push(`l.bathroom_count = ${addFallbackParam(bathrooms)}`);
       }
@@ -202,8 +219,8 @@ export async function searchListings(
       if (maxRent !== null) {
         fallbackConditions.push(`l.rent <= ${addFallbackParam(maxRent)}`);
       }
-      if (pets === true) {
-        fallbackConditions.push(`l.pet_allowed = true`);
+      if (pets !== null) {
+        fallbackConditions.push(`l.pet_allowed = ${addFallbackParam(pets)}`);
       }
       if (amenityNames.length > 0) {
         const p = addFallbackParam(amenityNames);

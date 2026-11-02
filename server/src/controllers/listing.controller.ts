@@ -7,6 +7,30 @@ import * as listingService from "../services/listing.service.js";
 import * as searchService from "../services/search/index.js";
 import * as mediaService from "../services/media.service.js";
 import { ensureOwner } from "../services/user.service.js";
+import { z } from "zod";
+import { interpretSearch, interpretationInput } from "../services/search/interpretSearch.js";
+
+const decimalInteger = (minimum: number, maximum: number) => z.string().regex(/^\d+$/).transform(Number).pipe(z.number().int().min(minimum).max(maximum));
+const optionalCount = decimalInteger(0, 100).optional();
+const optionalRent = decimalInteger(0, 100000000).optional();
+const addedSearchParams = z.object({
+  minRent: optionalRent, minBedrooms: optionalCount,
+  pets: z.enum(["true", "false"]).optional(), keywords: z.string().max(600).optional(),
+  strict: z.enum(["0", "1"]).optional(),
+});
+const strictSearchParams = addedSearchParams.extend({
+  bedrooms: optionalCount, bathrooms: optionalCount, floor: optionalCount,
+  maxRent: optionalRent, areaId: decimalInteger(1, 2147483647).optional(),
+  area: z.string().max(120).optional(), areaName: z.string().max(120).optional(),
+  q: z.string().max(600).optional(), amenities: z.string().max(2000).optional(),
+  cursor: z.string().max(1000).optional(), limit: decimalInteger(1, 50).optional(),
+}).strict();
+
+export async function interpret(req: Request, res: Response) {
+  const input = interpretationInput.safeParse(req.body);
+  if (!input.success) { res.status(400).json({ error: "Search query must contain 1 to 600 characters, with no extra fields." }); return; }
+  res.json(await interpretSearch(input.data.query));
+}
 
 export async function getAll(req: Request, res: Response) {
   const listings = await listingService.getAllListings();
@@ -24,6 +48,9 @@ export async function getMy(req: Request, res: Response) {
 }
 
 export async function search(req: Request, res: Response) {
+  const extra = (req.query.strict === "1" ? strictSearchParams : addedSearchParams).safeParse(req.query);
+  if (!extra.success) { res.status(400).json({ error: "Invalid search filters. Use non-negative whole numbers and pets=true or false." }); return; }
+  if (req.query.q !== undefined && typeof req.query.q !== "string") { res.status(400).json({ error: "Invalid search query." }); return; }
   const q = (req.query.q as string) ?? null;
 
   const bedroom_raw = parseInt(req.query.bedrooms as string, 10);
@@ -55,6 +82,9 @@ export async function search(req: Request, res: Response) {
     : [];
 
   const result = await searchService.searchListings({
+    minRent: extra.data.minRent, minBedrooms: extra.data.minBedrooms,
+    pets: extra.data.pets === undefined ? undefined : extra.data.pets === "true",
+    keywords: extra.data.keywords, strict: extra.data.strict === "1",
     q,
     bedrooms,
     bathrooms,

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { apiClient } from "../api/client";
 import { useAuth } from "../context/AuthContext";
@@ -10,6 +10,8 @@ import {
 import { ApplicationInfoModal } from "../components/ApplicationInfoModal";
 import { PropertyCard } from "../components/PropertyCard";
 import { DHAKA_AREAS, getAreaIdByName } from "../utils/areaLookup";
+import { NaturalLanguageSearch } from "../components/NaturalLanguageSearch";
+import { buildStrictSearchParams, getNaturalSearchBlock, mergeSearchFilters, type NaturalSearchState } from "../utils/naturalLanguageSearch";
 import type { ListingImage } from "../types/listing";
 
 export interface BackendListing {
@@ -123,6 +125,29 @@ export function ListingsPage() {
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
 
+  const [searchMode, setSearchMode] = useState<"ordinary" | "natural">("ordinary");
+  const [naturalState, setNaturalState] = useState<NaturalSearchState>({ phase: "idle", interpretation: null });
+  const naturalMode = searchMode === "natural" && !(isVerifier && verifierView === "pending");
+  const manualKey = JSON.stringify([areaName, bedrooms, maxRent, selectedAmenities]);
+  const mergedNatural = useMemo(() => mergeSearchFilters(naturalState.interpretation?.filters || {}, {
+    ...(areaName ? { areaName } : {}),
+    ...(bedrooms !== null ? { bedrooms } : {}),
+    ...(maxRent !== null ? { maxRent } : {}),
+    ...(selectedAmenities.length ? { amenityNames: selectedAmenities } : {}),
+  }), [naturalState.interpretation, areaName, bedrooms, maxRent, selectedAmenities]);
+  const naturalBlock = naturalMode ? getNaturalSearchBlock(naturalState, mergedNatural.errors) : "";
+  const searchIdentity = JSON.stringify([naturalMode, naturalState, manualKey, searchTerm]);
+  const currentSearchIdentity = useRef(searchIdentity);
+  currentSearchIdentity.current = searchIdentity;
+  const resultIdentity = useRef("");
+  const activeRequestParams = useRef("");
+
+  useEffect(() => {
+    if (!naturalMode && naturalState.phase === "interpreting") {
+      setNaturalState({ phase: "idle", interpretation: null });
+    }
+  }, [naturalMode, naturalState.phase]);
+
   // Selected application modal state
   const [selectedApp, setSelectedApp] = useState<{
     listing: BackendListing;
@@ -211,10 +236,20 @@ export function ListingsPage() {
 
   // Debounced search query to backend with AbortController for race condition protection
   useEffect(() => {
-    const trimmed = searchTerm.trim();
+    const identity = searchIdentity;
+    activeRequestParams.current = "";
+    setNextCursor(null);
+    setLoadingMore(false);
+    setSearchResults(null);
+    if (naturalMode && naturalBlock) {
+      setIsSearching(false);
+      setSearchError(null);
+      return;
+    }
+    const trimmed = naturalMode ? "" : searchTerm.trim();
     const trimmedArea = areaName.trim();
     const hasFilters = Boolean(
-      trimmed || trimmedArea || bedrooms !== null || maxRent !== null || selectedAmenities.length > 0
+      naturalMode || trimmed || trimmedArea || bedrooms !== null || maxRent !== null || selectedAmenities.length > 0
     );
 
     if (!hasFilters) {
@@ -257,12 +292,16 @@ export function ListingsPage() {
           params.set("amenities", selectedAmenities.join(","));
         }
 
+        const effectiveParams = naturalMode ? buildStrictSearchParams(mergedNatural.filters) : params;
+        const requestParams = effectiveParams.toString();
         const data = await apiClient.get<{ listings: BackendListing[]; nextCursor?: string | null }>(
-          `/listings/search?${params.toString()}`,
+          `/listings/search?${requestParams}`,
           { signal: abortController.signal }
         );
 
-        if (isActive) {
+        if (isActive && currentSearchIdentity.current === identity) {
+          activeRequestParams.current = requestParams;
+          resultIdentity.current = identity;
           setSearchResults(data.listings || []);
           setNextCursor(data.nextCursor || null);
         }
@@ -274,40 +313,34 @@ export function ListingsPage() {
           setIsSearching(false);
         }
       }
-    }, 300);
+    }, naturalMode ? 0 : 300);
 
     return () => {
       isActive = false;
       clearTimeout(timer);
       abortController.abort();
     };
-  }, [searchTerm, areaName, bedrooms, maxRent, selectedAmenities]);
+  }, [searchTerm, areaName, bedrooms, maxRent, selectedAmenities, naturalMode, naturalBlock, mergedNatural, searchIdentity]);
 
   const handleLoadMore = async () => {
     if (!nextCursor || loadingMore) return;
+    const identity = searchIdentity;
+    if (!activeRequestParams.current || resultIdentity.current !== identity) return;
     setLoadingMore(true);
     try {
-      const params = new URLSearchParams();
-      if (searchTerm.trim()) params.set("q", searchTerm.trim());
-      if (areaName.trim()) {
-        params.set("area", areaName.trim());
-        const areaId = getAreaIdByName(areaName.trim());
-        if (areaId !== null) params.set("areaId", areaId.toString());
-      }
-      if (bedrooms !== null && !isNaN(bedrooms)) params.set("bedrooms", bedrooms.toString());
-      if (maxRent !== null && !isNaN(maxRent)) params.set("maxRent", maxRent.toString());
-      if (selectedAmenities.length > 0) params.set("amenities", selectedAmenities.join(","));
+      const params = new URLSearchParams(activeRequestParams.current);
       params.set("cursor", nextCursor);
 
       const data = await apiClient.get<{ listings: BackendListing[]; nextCursor?: string | null }>(
         `/listings/search?${params.toString()}`
       );
+      if (currentSearchIdentity.current !== identity) return;
       setSearchResults((prev) => [...(prev || []), ...(data.listings || [])]);
       setNextCursor(data.nextCursor || null);
     } catch (err: any) {
       console.error("Failed to load more listings:", err);
     } finally {
-      setLoadingMore(false);
+      if (currentSearchIdentity.current === identity) setLoadingMore(false);
     }
   };
 
@@ -336,6 +369,7 @@ export function ListingsPage() {
   };
 
   const handleClearAll = () => {
+    setNaturalState({ phase: "idle", interpretation: null });
     setSearchTerm("");
     setAreaName("");
     setBedrooms(null);
@@ -358,7 +392,9 @@ export function ListingsPage() {
   };
 
   // Filter user's personal listings locally with the active filters
-  const filteredMyListings = myListings.filter((item) => {
+  const filteredMyListings = naturalMode
+    ? (naturalBlock || resultIdentity.current !== searchIdentity ? [] : (searchResults || []).filter((item) => Number(item.owner_id) === Number(user?.id)))
+    : myListings.filter((item) => {
     const matchesText =
       !searchTerm.trim() ||
       item.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -377,7 +413,9 @@ export function ListingsPage() {
   });
 
   // Base list of public listings: backend search results if filter active, otherwise default all listings
-  const basePublicListings = searchResults !== null ? searchResults : listings;
+  const basePublicListings = naturalMode
+    ? (naturalBlock || resultIdentity.current !== searchIdentity ? [] : searchResults || [])
+    : searchResults !== null ? searchResults : listings;
 
   // Filter out user's own listings from public view when logged in
   const displayedPublicListings = user
@@ -415,11 +453,19 @@ export function ListingsPage() {
         </div>
       </div>
 
+      {!(isVerifier && verifierView === "pending") && (
+        <div className="mb-4 flex flex-wrap gap-2" role="group" aria-label="Search mode">
+          <button type="button" aria-pressed={!naturalMode} onClick={() => { setSearchMode("ordinary"); setNaturalState({ phase: "idle", interpretation: null }); }} className={`min-h-11 rounded-lg border px-4 py-2 text-sm ${!naturalMode ? "border-slate-400 bg-slate-800 text-white" : "border-slate-700 text-slate-300"}`}>Ordinary search</button>
+          <button type="button" aria-pressed={naturalMode} onClick={() => setSearchMode("natural")} className={`min-h-11 rounded-lg border px-4 py-2 text-sm ${naturalMode ? "border-slate-400 bg-slate-800 text-white" : "border-slate-700 text-slate-300"}`}>Natural language · বাংলা / English / Banglish</button>
+        </div>
+      )}
+      {naturalMode && <NaturalLanguageSearch state={naturalState} onChange={setNaturalState} manualKey={manualKey} amenityNames={allAmenities.map((amenity) => amenity.name)} onOrdinarySearch={(query) => { setSearchMode("ordinary"); setNaturalState({ phase: "idle", interpretation: null }); handleKeywordChange(query); }} />}
+      {naturalMode && <p className="mb-3 text-sm text-slate-300">Manual filters below intersect with the interpreted requirements.</p>}
       {/* Comprehensive Search & Filter Widget */}
       <form onSubmit={handleSearchSubmit} className="mb-8 flex flex-col gap-3">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3">
           {/* Query Text Input */}
-          <div className="sm:col-span-2 lg:col-span-4 relative">
+          <div className={`sm:col-span-2 lg:col-span-4 relative ${naturalMode ? "hidden" : ""}`}>
             <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
               <span className="material-symbols-outlined text-[20px]">search</span>
             </div>
@@ -427,6 +473,7 @@ export function ListingsPage() {
               type="text"
               value={searchTerm}
               onChange={(e) => handleKeywordChange(e.target.value)}
+              aria-label="Search title or keywords"
               placeholder="Search title, keywords, etc..."
               className="w-full bg-[#12151c] text-white border border-slate-700 rounded-xl pl-10 pr-10 py-3 text-sm focus:outline-none focus:border-white placeholder:text-slate-500 transition-colors shadow-sm"
             />
@@ -479,7 +526,7 @@ export function ListingsPage() {
               <option value="2" className="bg-[#12151c] text-white">2 Bedrooms</option>
               <option value="3" className="bg-[#12151c] text-white">3 Bedrooms</option>
               <option value="4" className="bg-[#12151c] text-white">4 Bedrooms</option>
-              <option value="5" className="bg-[#12151c] text-white">5+ Bedrooms</option>
+              <option value="5" className="bg-[#12151c] text-white">5 Bedrooms</option>
             </select>
             <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-slate-500">
               <span className="material-symbols-outlined text-sm">expand_more</span>
@@ -577,7 +624,7 @@ export function ListingsPage() {
           <div className="flex flex-wrap items-center gap-2 pt-1 text-xs">
             <span className="text-slate-400 font-medium">Active Filters:</span>
 
-            {searchTerm.trim() && (
+            {!naturalMode && searchTerm.trim() && (
               <span className="inline-flex items-center gap-1.5 bg-slate-800 text-slate-200 border border-slate-700 px-2.5 py-1 rounded-full">
                 <span>Keyword: "{searchTerm.trim()}"</span>
                 <button
@@ -784,6 +831,7 @@ export function ListingsPage() {
         </div>
       ) : (
         <>
+          {naturalMode && naturalBlock && <div role={mergedNatural.errors.length ? "alert" : "status"} className="mb-6 rounded-xl border border-slate-700 p-5 text-sm text-slate-200">{naturalBlock}</div>}
           {/* Initial Database Loading State */}
           {loading && (
             <div className="py-20 text-center text-slate-400">
@@ -805,7 +853,7 @@ export function ListingsPage() {
             </div>
           )}
 
-          {!loading && !error && (
+          {!loading && !error && !naturalBlock && (
             <>
           {/* User's Personal Listings Section (if logged in) */}
           {Boolean(token && user) && (

@@ -52,3 +52,9 @@ export const searchRateLimiter = createRateLimiter({
   max: 60, // 60 requests per minute per IP
   message: "Too many search requests. Please slow down.",
 });
+
+export const interpretationRateLimiter = createRateLimiter({
+  windowMs: 60 * 1000,
+  max: 10,
+  message: "Too many AI search requests. Wait a minute or use ordinary search.",
+});

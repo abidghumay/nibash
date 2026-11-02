@@ -1,4 +1,5 @@
 import { pool } from "../../db/pool.js";
+import { canonicalAlias } from "./searchCatalog.js";
 
 export interface MatchedArea {
   id: number;
@@ -12,7 +13,7 @@ export async function fuzzyMatchArea(
     return null;
   }
 
-  const query = areaHint.trim();
+  const query = canonicalAlias(areaHint.trim());
   if (!query) {
     return null;
   }
