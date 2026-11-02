@@ -1,4 +1,4 @@
-import { screeningLabel } from "../utils/documentScreening";
+﻿import { screeningLabel } from "../utils/documentScreening";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useNavigate, useLocation, Link } from "react-router-dom";
 import { apiClient } from "../api/client";
@@ -1708,144 +1708,78 @@ export function ListingDetailPage() {
                     return (
                       <div
                         key={doc.id}
-                        className={`p-4 sm:p-5 rounded-xl border bg-[#090a0c] transition-all flex flex-col gap-4 ${
+                        className={`rounded-xl border bg-[#090a0c] transition-all overflow-hidden ${
                           isDocVerified
                             ? "border-emerald-800/40 shadow-[0_0_15px_rgba(16,185,129,0.05)]"
                             : "border-slate-800 hover:border-slate-700"
                         }`}
                       >
-                        {/* Document Top Row: Title, Badges, Actions */}
-                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                          <div className="flex items-center gap-3">
-                            <div
-                              className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border ${
-                                isDocVerified
-                                  ? "bg-emerald-950/60 border-emerald-500/40 text-emerald-400"
-                                  : "bg-white/5 border-white/10 text-slate-400"
-                              }`}
-                            >
-                              <span className="material-symbols-outlined text-xl">
-                                {isDocVerified ? "verified" : "article"}
+                        {/* -- Document Header -- */}
+                        <div className="p-4 sm:p-5 flex items-center gap-3">
+                          <div
+                            className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border ${
+                              isDocVerified
+                                ? "bg-emerald-950/60 border-emerald-500/40 text-emerald-400"
+                                : "bg-white/5 border-white/10 text-slate-400"
+                            }`}
+                          >
+                            <span className="material-symbols-outlined text-xl">
+                              {isDocVerified ? "verified" : "article"}
+                            </span>
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h4 className="text-sm font-semibold text-white">
+                                {docTitle}
+                              </h4>
+                              <span
+                                className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] uppercase font-label-sm tracking-wider font-semibold border ${
+                                  isDocVerified
+                                    ? "text-emerald-300 bg-emerald-950/70 border-emerald-500/40"
+                                    : "text-slate-300 bg-slate-950/70 border-slate-500/40"
+                                }`}
+                              >
+                                <span
+                                  className={`w-1.5 h-1.5 rounded-full ${
+                                    isDocVerified
+                                      ? "bg-emerald-400"
+                                      : "bg-slate-400 animate-pulse"
+                                  }`}
+                                />
+                                {isDocVerified
+                                  ? "Human reviewed"
+                                  : "Pending Review"}
                               </span>
                             </div>
-                            <div>
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <h4 className="text-sm font-semibold text-white">
-                                  {docTitle}
-                                </h4>
-                                <span
-                                  className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] uppercase font-label-sm tracking-wider font-semibold border ${
-                                    isDocVerified
-                                      ? "text-emerald-300 bg-emerald-950/70 border-emerald-500/40"
-                                      : "text-slate-300 bg-slate-950/70 border-slate-500/40"
-                                  }`}
-                                >
-                                  <span
-                                    className={`w-1.5 h-1.5 rounded-full ${
-                                      isDocVerified
-                                        ? "bg-emerald-400"
-                                        : "bg-slate-400 animate-pulse"
-                                    }`}
-                                  />
-                                  {isDocVerified
-                                    ? "Human reviewed"
-                                    : "Pending Review"}
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-2 text-[11px] text-slate-400 mt-0.5">
-                                <span className="font-mono text-slate-500">
-                                  ID: #{doc.id}
-                                </span>
-                                <span>•</span>
-                                <span>Uploaded: {uploadedDate}</span>
-                                {doc.verification_type && (
-                                  <>
-                                    <span>•</span>
-                                    <span className="capitalize text-slate-400">
-                                      Type: {doc.verification_type}
-                                    </span>
-                                  </>
-                                )}
-                              </div>
-
-                              {doc.reviewed_at && <p className="text-xs text-slate-300">Reviewed by #{doc.verifier_id} on {new Date(doc.reviewed_at).toLocaleString()}: {doc.review_reason}</p>}
-                              {/* AI Overview Badge & Summary */}
-                              {doc.ai_status && (
-                                <div className="flex flex-wrap items-center gap-2 mt-2">
-                                  <span
-                                    className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium border ${
-                                      doc.ai_status === "passed"
-                                        ? "bg-emerald-950/70 border-emerald-500/40 text-emerald-300"
-                                        : doc.ai_status === "flagged"
-                                        ? "bg-amber-950/70 border-amber-500/40 text-amber-300"
-                                        : doc.ai_status === "auto_rejected"
-                                        ? "bg-rose-950/70 border-rose-500/40 text-rose-300"
-                                        : "bg-sky-950/70 border-sky-500/40 text-sky-300"
-                                    }`}
-                                  >
-                                    <span className="material-symbols-outlined text-[13px]">
-                                      {doc.ai_status === "passed"
-                                        ? "check_circle"
-                                        : doc.ai_status === "auto_rejected"
-                                        ? "cancel"
-                                        : doc.ai_status === "flagged"
-                                        ? "warning"
-                                        : "psychology"}
-                                    </span>
-                                    <span>
-                                      {screeningLabel(doc.ai_status)}
-                                    </span>
+                            <div className="flex items-center gap-2 text-[11px] text-slate-400 mt-0.5">
+                              <span className="font-mono text-slate-500">
+                                ID: #{doc.id}
+                              </span>
+                              <span>•</span>
+                              <span>Uploaded: {uploadedDate}</span>
+                              {doc.verification_type && (
+                                <>
+                                  <span>•</span>
+                                  <span className="capitalize text-slate-400">
+                                    Type: {doc.verification_type}
                                   </span>
-                                  {doc.ai_summary && (
-                                    <span className="text-[11px] text-slate-400 line-clamp-1 italic">
-                                      "{doc.ai_summary}"
-                                    </span>
-                                  )}
-                                </div>
+                                </>
                               )}
                             </div>
                           </div>
-
-                          {/* Quick Verify Document Button (for verifiers) */}
-                          {user?.is_verifier && !isDocVerified && (
-                            <form className="space-y-2 sm:max-w-sm" onSubmit={e => { e.preventDefault(); void handleVerifyDocument(doc.id); }}>
-                              <label className="block text-sm" htmlFor={`review-reason-${doc.id}`}>What did you check? (required)</label>
-                              <textarea id={`review-reason-${doc.id}`} name="reason" required minLength={10} maxLength={2000}
-                                disabled={isReviewStale}
-                                className="w-full rounded border border-slate-500 bg-slate-950 p-2 text-base text-white"
-                                value={reviewReasons[doc.id] || ""}
-                                onChange={e => { setReviewReasons(prev => ({...prev, [doc.id]:e.target.value})); setReviewVersions(prev => ({...prev, [doc.id]:prev[doc.id] ?? doc.upload_version})); }} />
-                              {doc.ai_status !== "passed" && (
-                                <label className="flex items-center gap-2 text-sm">
-                                  <input type="checkbox" name="override_ai" required checked={reviewOverrides[doc.id] || false}
-                                    onChange={e => setReviewOverrides(prev => ({...prev, [doc.id]:e.target.checked}))} />
-                                  Override AI screening based on my examination
-                                </label>
-                              )}
-                              <p className="text-xs text-slate-300">Reviewing upload version {reviewVersion}. This records your evidence review, not government confirmation of ownership.</p>
-                              {isReviewStale && <div role="alert" className="text-sm text-amber-200">
-                                The document was replaced. Inspect the current file before starting a new review.
-                                <button type="button" className="block min-h-12 underline" onClick={() => {
-                                  setReviewReasons(prev => ({...prev, [doc.id]:""}));
-                                  setReviewOverrides(prev => ({...prev, [doc.id]:false}));
-                                  setReviewVersions(prev => ({...prev, [doc.id]:doc.upload_version}));
-                                }}>Discard draft and review version {doc.upload_version}</button>
-                              </div>}
-                              <button type="submit" disabled={verifyingDocId !== null || isReviewStale}
-                                className="min-h-12 px-4 rounded border border-emerald-500 text-emerald-200 disabled:opacity-50">
-                                {verifyingDocId === doc.id ? "Saving review..." : "Record human review"}
-                              </button>
-                            </form>
-                          )}
                         </div>
 
-                        {/* Media Attachments Preview Grid */}
+                        {/* -- Document Preview (files first so verifiers see them immediately) -- */}
                         {doc.media && doc.media.length > 0 && (
-                          <div className="pt-3 border-t border-white/5">
+                          <div className="px-4 sm:px-5 pb-4">
                             <div className="text-[11px] font-mono text-slate-400 uppercase tracking-wider mb-2.5 flex items-center justify-between">
-                              <span>Attached Files ({doc.media.length})</span>
-                              <span className="text-[10px] text-slate-500">
-                                Click file to inspect
+                              <span className="flex items-center gap-1.5">
+                                <span className="material-symbols-outlined text-sm">attach_file</span>
+                                Document Files ({doc.media.length})
+                              </span>
+                              <span className="text-[10px] text-slate-500 flex items-center gap-1">
+                                <span className="material-symbols-outlined text-[11px]">touch_app</span>
+                                Click to inspect
                               </span>
                             </div>
                             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
@@ -1911,6 +1845,185 @@ export function ListingDetailPage() {
                                 );
                               })}
                             </div>
+                          </div>
+                        )}
+
+                        {/* -- AI Screening Analysis (full detail, not truncated) -- */}
+                        {doc.ai_status && (
+                          <div className="mx-4 sm:mx-5 mb-4 rounded-xl border border-white/8 bg-[#0d1017] overflow-hidden">
+                            <div className="px-4 py-3 flex items-center gap-2.5 border-b border-white/5">
+                              <span className="material-symbols-outlined text-base text-indigo-400">psychology</span>
+                              <span className="text-xs font-semibold text-white tracking-wide">AI Screening Result</span>
+                              <span
+                                className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium border ${
+                                  doc.ai_status === "passed"
+                                    ? "bg-emerald-950/70 border-emerald-500/40 text-emerald-300"
+                                    : doc.ai_status === "flagged"
+                                    ? "bg-amber-950/70 border-amber-500/40 text-amber-300"
+                                    : doc.ai_status === "auto_rejected"
+                                    ? "bg-rose-950/70 border-rose-500/40 text-rose-300"
+                                    : "bg-sky-950/70 border-sky-500/40 text-sky-300"
+                                }`}
+                              >
+                                <span className="material-symbols-outlined text-[13px]">
+                                  {doc.ai_status === "passed"
+                                    ? "check_circle"
+                                    : doc.ai_status === "auto_rejected"
+                                    ? "cancel"
+                                    : doc.ai_status === "flagged"
+                                    ? "warning"
+                                    : "psychology"}
+                                </span>
+                                <span>{screeningLabel(doc.ai_status)}</span>
+                              </span>
+                            </div>
+                            <div className="px-4 py-3 space-y-3">
+                              {doc.ai_summary && (
+                                <p className="text-[12px] text-slate-300 leading-relaxed bg-[#08090c] p-3 rounded-lg border border-white/5">
+                                  {doc.ai_summary}
+                                </p>
+                              )}
+                              {doc.ai_flags && doc.ai_flags.length > 0 && (
+                                <div className="flex flex-wrap gap-1.5">
+                                  {doc.ai_flags.map((flag, flagIdx) => (
+                                    <span
+                                      key={flagIdx}
+                                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-900 border border-white/10 text-[11px] text-slate-300 font-mono"
+                                    >
+                                      <span className="material-symbols-outlined text-[12px] text-indigo-400">info</span>
+                                      {flag}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                              {doc.ai_extracted_data && Object.keys(doc.ai_extracted_data).length > 0 && (
+                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-[11px] bg-white/[0.02] p-3 rounded-lg border border-white/5">
+                                  {doc.ai_extracted_data.ownerNameDetected && (
+                                    <div>
+                                      <span className="text-slate-500 text-[10px] block font-mono mb-0.5">Owner on Doc</span>
+                                      <span className="text-slate-200 font-medium">{doc.ai_extracted_data.ownerNameDetected}</span>
+                                    </div>
+                                  )}
+                                  {doc.ai_extracted_data.addressDetected && (
+                                    <div>
+                                      <span className="text-slate-500 text-[10px] block font-mono mb-0.5">Address on Doc</span>
+                                      <span className="text-slate-200 font-medium">{doc.ai_extracted_data.addressDetected}</span>
+                                    </div>
+                                  )}
+                                  {doc.ai_extracted_data.documentNumber && (
+                                    <div>
+                                      <span className="text-slate-500 text-[10px] block font-mono mb-0.5">Document / Khatian #</span>
+                                      <span className="text-slate-200 font-medium">{doc.ai_extracted_data.documentNumber}</span>
+                                    </div>
+                                  )}
+                                  {doc.ai_extracted_data.issueDate && (
+                                    <div>
+                                      <span className="text-slate-500 text-[10px] block font-mono mb-0.5">Issue Date</span>
+                                      <span className="text-slate-200 font-medium">{doc.ai_extracted_data.issueDate}</span>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                              <p className="text-[10px] text-slate-500 italic">Screening checks readability and consistency, not authenticity or legal ownership.</p>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* -- Previous Human Review -- */}
+                        {doc.reviewed_at && (
+                          <div className="mx-4 sm:mx-5 mb-4 p-3 rounded-xl bg-emerald-950/30 border border-emerald-800/30">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="material-symbols-outlined text-sm text-emerald-400">task_alt</span>
+                              <span className="text-xs font-semibold text-emerald-300">Human Review Recorded</span>
+                            </div>
+                            <p className="text-[12px] text-slate-300 leading-relaxed">
+                              Reviewed by <span className="font-mono text-slate-200">#{doc.verifier_id}</span> on{" "}
+                              <span className="text-slate-200">{new Date(doc.reviewed_at).toLocaleString()}</span>
+                            </p>
+                            {doc.review_reason && (
+                              <p className="text-[12px] text-slate-400 mt-1.5 bg-[#08090c] p-2.5 rounded-lg border border-white/5">
+                                {doc.review_reason}
+                              </p>
+                            )}
+                          </div>
+                        )}
+
+                        {/* -- Verifier Review Form -- */}
+                        {user?.is_verifier && !isDocVerified && (
+                          <div className="mx-4 sm:mx-5 mb-4 rounded-xl border border-slate-700/60 bg-[#0d1017] overflow-hidden">
+                            <div className="px-4 py-3 bg-[#0f1218] border-b border-white/8 flex items-center gap-2">
+                              <span className="material-symbols-outlined text-base text-emerald-400">rate_review</span>
+                              <span className="text-xs font-semibold text-white tracking-wide">Record Your Review</span>
+                              <span className="text-[10px] text-slate-500 ml-auto font-mono">v{reviewVersion}</span>
+                            </div>
+                            <form className="p-4 space-y-4" onSubmit={e => { e.preventDefault(); void handleVerifyDocument(doc.id); }}>
+                              {isReviewStale && (
+                                <div role="alert" className="p-3 rounded-lg bg-amber-950/40 border border-amber-700/50 flex flex-col gap-2">
+                                  <div className="flex items-center gap-2">
+                                    <span className="material-symbols-outlined text-sm text-amber-400">warning</span>
+                                    <span className="text-sm font-medium text-amber-200">Document replaced</span>
+                                  </div>
+                                  <p className="text-xs text-amber-300/80">The document was replaced since you started reviewing. Inspect the current file before continuing.</p>
+                                  <button type="button" className="self-start mt-1 px-3 py-1.5 text-xs font-medium rounded-lg bg-amber-900/40 border border-amber-600/40 text-amber-200 hover:bg-amber-900/60 transition cursor-pointer" onClick={() => {
+                                    setReviewReasons(prev => ({...prev, [doc.id]:""}));
+                                    setReviewOverrides(prev => ({...prev, [doc.id]:false}));
+                                    setReviewVersions(prev => ({...prev, [doc.id]:doc.upload_version}));
+                                  }}>Discard draft &amp; review version {doc.upload_version}</button>
+                                </div>
+                              )}
+
+                              <div>
+                                <label className="block text-xs font-medium text-slate-300 mb-1.5" htmlFor={`review-reason-${doc.id}`}>
+                                  What did you check? <span className="text-red-400">*</span>
+                                </label>
+                                <textarea
+                                  id={`review-reason-${doc.id}`}
+                                  name="reason"
+                                  required
+                                  minLength={10}
+                                  maxLength={2000}
+                                  rows={3}
+                                  disabled={isReviewStale}
+                                  placeholder="Describe what you verified — e.g. matched owner name, confirmed address, checked bill date…"
+                                  className="w-full rounded-lg border border-slate-700 bg-[#090a0c] px-3 py-2.5 text-sm text-white placeholder:text-slate-600 focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600/30 focus:outline-none transition disabled:opacity-40 disabled:cursor-not-allowed resize-y"
+                                  value={reviewReasons[doc.id] || ""}
+                                  onChange={e => { setReviewReasons(prev => ({...prev, [doc.id]:e.target.value})); setReviewVersions(prev => ({...prev, [doc.id]:prev[doc.id] ?? doc.upload_version})); }}
+                                />
+                              </div>
+
+                              {doc.ai_status !== "passed" && (
+                                <label className="flex items-start gap-3 p-3 rounded-lg bg-[#090a0c] border border-slate-700/60 cursor-pointer hover:border-slate-600 transition group">
+                                  <input
+                                    type="checkbox"
+                                    name="override_ai"
+                                    required
+                                    checked={reviewOverrides[doc.id] || false}
+                                    onChange={e => setReviewOverrides(prev => ({...prev, [doc.id]:e.target.checked}))}
+                                    className="mt-0.5 w-4 h-4 rounded border-slate-600 bg-slate-900 text-emerald-500 focus:ring-emerald-500/30 cursor-pointer"
+                                  />
+                                  <div>
+                                    <span className="text-xs font-medium text-slate-200 group-hover:text-white transition">Override AI screening based on my examination</span>
+                                    <p className="text-[10px] text-slate-500 mt-0.5">Required when the AI screening did not pass. Confirms you inspected the document yourself.</p>
+                                  </div>
+                                </label>
+                              )}
+
+                              <div className="flex items-center justify-between gap-3 pt-1">
+                                <p className="text-[10px] text-slate-500 leading-relaxed">
+                                  This records your evidence review, not government confirmation of ownership.
+                                </p>
+                                <button
+                                  type="submit"
+                                  disabled={verifyingDocId !== null || isReviewStale}
+                                  className="shrink-0 inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-medium transition shadow-lg shadow-emerald-900/30 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                                >
+                                  <span className="material-symbols-outlined text-base">
+                                    {verifyingDocId === doc.id ? "hourglass_top" : "check_circle"}
+                                  </span>
+                                  {verifyingDocId === doc.id ? "Saving…" : "Record Review"}
+                                </button>
+                              </div>
+                            </form>
                           </div>
                         )}
                       </div>
