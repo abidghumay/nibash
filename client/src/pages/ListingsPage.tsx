@@ -231,7 +231,7 @@ export function ListingsPage() {
 
   // Check whether any search filter is active
   const isFilterActive = Boolean(
-    searchTerm.trim() || areaName.trim() || bedrooms !== null || maxRent !== null || selectedAmenities.length > 0
+    naturalMode || searchTerm.trim() || areaName.trim() || bedrooms !== null || maxRent !== null || selectedAmenities.length > 0
   );
 
   // Debounced search query to backend with AbortController for race condition protection

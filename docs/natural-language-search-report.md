@@ -41,6 +41,8 @@ The initial provider request could time out or fail with HTTP 400. A controlled 
 
 Final live evaluation of all **12 manually specified fixtures: 12/12 passed** against `gemini-3.5-flash-lite` with a 10-second timeout. This includes the equivalent English, Bangla and Banglish requests, two-sided rent ranges, floors, pet policies, aliases, unsupported transit/amenities and optional parking. Measured median latency was **1557 ms** and empirical p95 **9007 ms** (range **934–9007 ms**). See `server/scripts/search-evaluation-results.json` for each expected/actual result. This is a small synthetic fixture evaluation, not a general accuracy or production latency guarantee. Earlier failures are retained here as investigation history rather than described as successful requests.
 
+After deploying correction `6c79d59`, the production API interpreted `ধানমন্ডিতে ৩ বেডরুম ৩০ হাজার টাকার মধ্যে লিফট চাই` in **1307 ms**: Dhanmondi (area 2), exactly 3 bedrooms, maximum rent 30000 and Elevator, with no unsupported requirements or warnings. Production browser verification showed the editable controls. The matching strict SQL search returned zero listings without relaxing those constraints. Natural-language mode is now counted as an active search for empty-state messaging, so an empty filtered result is not described as an empty database.
+
 Synthetic route integration requests in the final suite took about 15 ms for interpretation with a stubbed provider and 25–45 ms for rate-limited/disabled paths, excluding database fixture startup. These local in-process measurements do not predict network or production latency.
 
 To repeat a live evaluation from `server` in PowerShell:
