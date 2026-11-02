@@ -28,6 +28,7 @@ import { VerifyPortalPage } from "./pages/VerifyPortalPage";
 import { VerifierDashboardPage } from "./pages/VerifierDashboardPage";
 import { ChangePasswordPage } from "./pages/ChangePasswordPage";
 import { OwnerIncomePage } from "./pages/OwnerIncomePage";
+import { InboxPage } from "./pages/InboxPage";
 
 function HomePage() {
   const { user } = useAuth();
@@ -86,6 +87,7 @@ export default function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/verify" element={<VerifyPortalPage />} />
+          <Route path="/inbox" element={<ProtectedRoute><InboxPage /></ProtectedRoute>} />
           <Route
             path="/verify/dashboard"
             element={

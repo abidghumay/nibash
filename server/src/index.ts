@@ -14,6 +14,8 @@ import documentRoutes from "./routes/document.route.js";
 import dashboardRoutes from "./routes/dashboard.route.js";
 import incomeRoutes from "./routes/income.route.js";
 import areaRoutes from "./routes/area.route.js";
+import notificationRoutes from "./routes/notification.route.js";
+import { generateInboxReminders } from "./services/notification.service.js";
 import { startDocumentWorker } from "./services/documentAiJobs.service.js";
 
 dotenv.config();
@@ -35,6 +37,7 @@ app.use("/api/documents", documentRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/owners/me/income", incomeRoutes);
 app.use("/api/areas", areaRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 // root route
 app.get("/", (_req, res) => {
@@ -56,5 +59,6 @@ app.get("/health", async (_req, res) => {
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   startDocumentWorker();
+  void generateInboxReminders().catch(err => console.error("Inbox reminder catch-up failed", err));
   console.log(`Server running on port ${PORT}`);
 });

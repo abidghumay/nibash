@@ -1,6 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { ProfileMenu } from "./ProfileMenu";
 import { useAuth } from "../context/AuthContext";
+import { InboxBell } from "./InboxBell";
 
 export function Navbar() {
   const location = useLocation();
@@ -122,6 +123,7 @@ export function Navbar() {
                 </Link>
               </>
             )}
+            <InboxBell />
             <ProfileMenu />
           </div>
         ) : (

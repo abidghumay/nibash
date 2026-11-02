@@ -83,11 +83,29 @@ nibash/
    ```
 
    On this **new, empty database only**, run the SQL files in `db/migrations/`
-   in numeric order (001–015), stopping on errors. Older bootstrap migrations
+   in numeric order (001–017), stopping on errors. Older bootstrap migrations
    contain destructive statements; never replay them on an existing database.
    For an existing installation through 014, apply only 015 after a backup.
    Document storage also requires the Supabase setup and legacy-file migration
    in [the document deployment guide](docs/document-verification-fixes.md).
+
+   For an existing installation through 015, apply 016 (monthly payment fix)
+   followed by `017_automated_inbox.sql` before starting the updated API. Do not
+   replay bootstrap migrations. Migration 017 creates the inbox and imports
+   existing pending/overdue payments and signed contracts already within one
+   calendar month of their end date; old completed events are not imported.
+
+   Inbox messages are created transactionally by database triggers for payment
+   creation/confirmation/rejection and contract proposal/signature/completion.
+   The API checks expiry reminders on startup and daily at 00:05 Asia/Dhaka;
+   repeated checks do not duplicate messages. Calendar-month subtraction clamps
+   to the last day of February where needed. Keep the API running for scheduled
+   reminders; this does not replace the existing monthly-payment scheduler.
+   `/inbox` provides private history, unread filtering, and read/unread controls.
+   WhatsApp delivery and personal conversations are not enabled.
+   Browser database roles have no direct inbox access; the API uses its existing
+   owner database connection. See [the live inbox rollout](docs/inbox-database-rollout.md)
+   for the applied migration and verification record.
 
 3. **Configure environment variables**
 

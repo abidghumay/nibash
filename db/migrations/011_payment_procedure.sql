@@ -1,19 +1,19 @@
--- ALTER TABLE Payments
---   ADD COLUMN IF NOT EXISTS billing_month date,
---   ADD COLUMN IF NOT EXISTS due_date date;
+ALTER TABLE Payments
+  ADD COLUMN IF NOT EXISTS billing_month date,
+  ADD COLUMN IF NOT EXISTS due_date date;
 
 -- -- Pending payments have no payment time or method yet
 -- ALTER TABLE Payments
 --   ALTER COLUMN paid_at DROP NOT NULL,
 --   ALTER COLUMN payment_method DROP NOT NULL;
 
--- ALTER TABLE Payments
---   ADD CONSTRAINT uq_payment_contract_month UNIQUE (contract_id, billing_month);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_payment_contract_month
+  ON Payments (contract_id, billing_month);
 
 -- pg_cron is an optional deployment extension, installed by the administrator.
 -- Plain PostgreSQL installations must still be able to apply the schema.
 
--- Insert a payment for each active contract every month
+-- Insert a payment for each signed contract within its date range every month
 CREATE OR REPLACE PROCEDURE generate_monthly_payments()
 LANGUAGE plpgsql
 AS $$
@@ -32,7 +32,7 @@ BEGIN
   FROM Contracts c
   JOIN Agreements a ON a.terms_id = c.agreement_id
   JOIN Terms t      ON t.id = a.terms_id
-  WHERE c.status = 'active'
+  WHERE c.status = 'signed'
     AND CURRENT_DATE BETWEEN c.start_date AND c.end_date
   ON CONFLICT (contract_id, billing_month) DO NOTHING;
 END;
