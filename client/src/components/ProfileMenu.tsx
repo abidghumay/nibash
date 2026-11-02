@@ -127,6 +127,8 @@ export function ProfileMenu() {
                   <span>My Listings</span>
                 </button>
 
+                <button onClick={() => { setOpen(false); navigate('/owner/tenants'); }} className="text-left px-3 py-3 rounded-xl text-xs uppercase tracking-wider text-[#334155] hover:bg-[#d0d5dc] cursor-pointer">My Tenants</button>
+
                 <button
                   onClick={() => {
                     setOpen(false);

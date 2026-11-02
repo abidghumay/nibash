@@ -47,6 +47,7 @@ interface ContractIncomeItem {
 
 interface PaymentLedgerItem {
   id: number;
+  eventId?:string|null;
   contractId: number;
   listingId: number;
   listingTitle: string;
@@ -747,7 +748,7 @@ export function OwnerIncomePage() {
                   </thead>
                   <tbody className="divide-y divide-slate-800/80 text-slate-300 font-mono">
                     {payments.map((p) => (
-                      <tr key={p.id} className="hover:bg-white/5 transition-colors">
+                      <tr key={`${p.id}:${p.eventId??'historical'}`} className="hover:bg-white/5 transition-colors">
                         <td className="py-3.5 px-4 font-semibold text-white whitespace-nowrap">
                           {formatDate(p.paidAt)}
                         </td>

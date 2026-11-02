@@ -10,6 +10,7 @@ export function ContractFormPage() {
 
   const listingId = searchParams.get("listingId") || "";
   const tenantId = searchParams.get("tenantId") || "";
+  const previousContractId=searchParams.get("previousContractId");
 
   // Contract form states
   const [startDate, setStartDate] = useState("");
@@ -21,7 +22,8 @@ export function ContractFormPage() {
   const [waterBill, setWaterBill] = useState("");
   const [serviceCharge, setServiceCharge] = useState("");
   const [monthlyDueDate, setMonthlyDueDate] = useState("");
-  const [securityDeposit, setSecurityDeposit] = useState("");
+  const [securityDeposit] = useState("0");
+  const [advanceRent,setAdvanceRent]=useState("0");
   const [petAllowed, setPetAllowed] = useState(false);
 
   // Status
@@ -40,7 +42,7 @@ export function ContractFormPage() {
     setLoadingTerms(true);
     apiClient
       .get<{
-        listing: {
+        listing?: {
           rent: number | null;
           electricity_bill: number | null;
           water_bill: number | null;
@@ -49,9 +51,14 @@ export function ContractFormPage() {
           pet_allowed: boolean | null;
           security_deposit: number | null;
         };
-      }>(`/listings/${listingId}`)
-      .then(({ listing }) => {
-        setRent(listing.rent != null ? String(listing.rent) : "");
+        contract?:{rent:number;electricity_bill:number;water_bill:number;service_charge:number;monthly_due_date:number;pet_allowed:boolean;security_deposit:number;end_date:string;effective_rent:number;renewal_rent:number};
+      }>(previousContractId?`/contracts/${previousContractId}`:`/listings/${listingId}`)
+      .then((data) => {
+        const listing=data.contract??data.listing;
+        if(!listing)throw new Error('Agreement terms unavailable');
+        if(data.contract){const start=new Date(data.contract.end_date);start.setUTCDate(start.getUTCDate()+1);setStartDate(start.toISOString().slice(0,10));}
+
+        setRent(data.contract ? String(data.contract.renewal_rent) : listing.rent != null ? String(listing.rent) : "");
         setElectricityBill(
           listing.electricity_bill != null ? String(listing.electricity_bill) : ""
         );
@@ -62,16 +69,14 @@ export function ContractFormPage() {
         setMonthlyDueDate(
           listing.monthly_due_date != null ? String(listing.monthly_due_date) : ""
         );
-        setSecurityDeposit(
-          listing.security_deposit != null ? String(listing.security_deposit) : ""
-        );
+
         setPetAllowed(listing.pet_allowed ?? false);
       })
       .catch((err: any) => {
         setTermsError(err.message || "Failed to load listing terms.");
       })
       .finally(() => setLoadingTerms(false));
-  }, [listingId]);
+  }, [listingId,previousContractId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -93,7 +98,9 @@ export function ContractFormPage() {
       water_bill: Number(waterBill),
       service_charge: Number(serviceCharge),
       monthly_due_date: Number(monthlyDueDate),
-      security_deposit: Number(securityDeposit),
+      security_deposit: securityDeposit,
+      advance_rent:advanceRent,
+      ...(previousContractId?{previous_contract_id:Number(previousContractId)}:{}),
       pet_allowed: Boolean(petAllowed),
     };
 
@@ -152,7 +159,7 @@ export function ContractFormPage() {
       <div className="border border-slate-800 bg-[#12151c] rounded-2xl p-6 sm:p-8">
         <h1 className="text-2xl font-bold text-white mb-1">Propose Digital Lease Contract</h1>
         <p className="text-xs text-slate-400 mb-6">
-          Specify agreement duration and financial obligations for the approved tenant.
+          Specify agreement duration and financial obligations for the approved tenant. Continuing renewals retain the original rent-protection history; new charges cannot bypass it.
         </p>
 
         {error && (
@@ -222,7 +229,7 @@ export function ContractFormPage() {
                 htmlFor="contract-security-deposit"
                 className="block text-xs uppercase font-medium text-slate-300 mb-1"
               >
-                Security Deposit (BDT) *
+                Security Deposit (BDT; unavailable)
               </label>
               <input
                 id="contract-security-deposit"
@@ -231,11 +238,13 @@ export function ContractFormPage() {
                 step="500"
                 required
                 value={securityDeposit}
-                onChange={(e) => setSecurityDeposit(e.target.value)}
+                readOnly aria-describedby="deposit-guidance"
                 className="w-full bg-[#0d1017] text-white border border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-white focus:ring-1 focus:ring-white/20"
               />
             </div>
 
+            <p id="deposit-guidance" className="text-sm text-amber-200">New security deposits are unavailable in the ordinary residential workflow. Historical listing deposits are not copied into new agreements.</p>
+            <div><label htmlFor="advance-rent" className="block text-sm text-slate-300 mb-2">Advance rent (BDT)</label><input id="advance-rent" name="advance_rent" type="number" min="0" max={rent||0} step="0.01" value={advanceRent} onChange={e=>setAdvanceRent(e.target.value)} className="w-full bg-[#0d1017] text-white border border-slate-700 rounded-lg px-3 py-3" aria-describedby="advance-guidance"/><p id="advance-guidance" className="text-sm text-slate-300 mt-2">Maximum one month's rent. More requires prior Rent Controller approval under Section 10; exceptional collection is unsupported here.</p></div>
             <div>
               <label
                 htmlFor="contract-electricity"

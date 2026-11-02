@@ -28,6 +28,7 @@ import { VerifyPortalPage } from "./pages/VerifyPortalPage";
 import { VerifierDashboardPage } from "./pages/VerifierDashboardPage";
 import { ChangePasswordPage } from "./pages/ChangePasswordPage";
 import { OwnerIncomePage } from "./pages/OwnerIncomePage";
+import { MyTenantsPage } from "./pages/MyTenantsPage";
 import { InboxPage } from "./pages/InboxPage";
 
 function HomePage() {
@@ -161,6 +162,10 @@ export default function App() {
                 <ContractFormPage />
               </ProtectedRoute>
             }
+          />
+          <Route
+            path="/owner/tenants"
+            element={<ProtectedRoute blockVerifier><MyTenantsPage /></ProtectedRoute>}
           />
           <Route
             path="/my-contract"

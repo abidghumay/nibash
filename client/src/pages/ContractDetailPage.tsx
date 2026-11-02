@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
 import { apiClient } from "../api/client";
 import { useAuth } from "../context/AuthContext";
+import { RentalManagementPanel } from "../components/RentalManagementPanel";
 import { ReviewModal, type ReviewData } from "../components/ReviewModal";
 import { DeleteConfirmModal } from "../components/DeleteConfirmModal";
 
@@ -10,11 +11,12 @@ interface ContractData {
   tenant_id: number;
   listing_id: number;
   agreement_id: number;
-  status: string; // 'proposed' | 'signed' | 'active' | 'completed'
+  status: string; // 'proposed' | 'signed' | 'renewed' | 'completed'
   start_date: string;
   end_date: string;
   paid_security_deposit: boolean;
   rent: number;
+  effective_rent?: string | number;
   electricity_bill: number;
   water_bill: number;
   service_charge: number;
@@ -37,6 +39,7 @@ interface PaymentRecord {
   id: number;
   contract_id: number;
   amount: string | number;
+  outstanding_balance?: string | number;
   payment_method: string | null;
   status: string; // 'pending' | 'overdue' | 'confirmed' | 'failed'
   billing_month?: string | null;
@@ -172,7 +175,7 @@ export function ContractDetailPage() {
   }, [reviewPhotoViewer]);
 
   const handleSignContract = async () => {
-    if (!id || !confirm("Are you sure you want to sign this digital lease contract?")) return;
+    if (!id || !confirm("Accept these agreement terms with your authenticated account? This does not register a lease or create a certified digital signature.")) return;
     setSigning(true);
     try {
       await apiClient.patch(`/contracts/${id}`, { status: "signed" });
@@ -293,7 +296,7 @@ export function ContractDetailPage() {
 
   // Monthly totals
   const totalMonthlyCommitment =
-    Number(contract.rent || 0) +
+    Number(contract.effective_rent ?? contract.rent ?? 0) +
     Number(contract.electricity_bill || 0) +
     Number(contract.water_bill || 0) +
     Number(contract.service_charge || 0);
@@ -316,7 +319,7 @@ export function ContractDetailPage() {
         <div className="flex items-center gap-2">
           <span
             className={`text-xs uppercase font-mono px-3 py-1 rounded-full font-semibold border flex items-center gap-1.5 ${
-              contract.status === "signed" || contract.status === "active"
+              contract.status === "signed" || contract.status === "renewed"
                 ? "bg-emerald-950 text-emerald-300 border-emerald-800 shadow-xs"
                 : contract.status === "completed"
                 ? "bg-blue-950 text-blue-300 border-blue-800"
@@ -325,7 +328,7 @@ export function ContractDetailPage() {
           >
             <span
               className={`w-1.5 h-1.5 rounded-full ${
-                contract.status === "signed" || contract.status === "active"
+                contract.status === "signed" || contract.status === "renewed"
                   ? "bg-emerald-400"
                   : contract.status === "completed"
                   ? "bg-blue-400"
@@ -336,6 +339,8 @@ export function ContractDetailPage() {
           </span>
         </div>
       </div>
+
+      {id && user && <RentalManagementPanel contractId={id} userId={user.id} />}
 
       {/* Main 12-Column Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
@@ -495,7 +500,7 @@ export function ContractDetailPage() {
               <div className="flex items-center justify-between py-3">
                 <span className="text-slate-400 font-medium">Monthly Rent</span>
                 <span className="text-white font-mono font-bold text-base">
-                  ৳{Number(contract.rent).toLocaleString()} / month
+                  ৳{Number(contract.effective_rent ?? contract.rent).toLocaleString()} / month
                 </span>
               </div>
 
@@ -536,7 +541,7 @@ export function ContractDetailPage() {
                     ৳{Number(contract.security_deposit).toLocaleString()}
                   </span>
                   <span className="text-[11px] text-slate-500">
-                    {contract.paid_security_deposit ? "✓ Verified Deposited" : "Pending one-time deposit"}
+                    {contract.paid_security_deposit ? "Historical confirmation recorded" : "Historical record; collection unsupported"}
                   </span>
                 </div>
               </div>
@@ -638,7 +643,7 @@ export function ContractDetailPage() {
 
                     <div className="flex items-baseline gap-2">
                       <span className="text-2xl sm:text-3xl font-extrabold text-white font-mono">
-                        ৳{Number(earliestDuePayment.amount).toLocaleString()}
+                        ৳{Number(earliestDuePayment.outstanding_balance ?? earliestDuePayment.amount).toLocaleString()}
                       </span>
                       <span
                         className={`text-xs ${
@@ -1019,12 +1024,12 @@ export function ContractDetailPage() {
               <div className="flex items-center justify-between pb-1">
                 <span className="text-slate-400">Payment Starts</span>
                 <span className="font-medium text-slate-200">
-                  1st of next month
+                  On the agreement effective date
                 </span>
               </div>
             </div>
 
-            {/* Sign Contract CTA if proposed */}
+            {/* Accept Agreement CTA if proposed */}
             {isTenant && contract.status === "proposed" && (
               <button
                 type="button"
@@ -1032,7 +1037,7 @@ export function ContractDetailPage() {
                 disabled={signing}
                 className="mt-5 w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2.5 rounded-xl text-xs uppercase tracking-wider transition cursor-pointer shadow-md disabled:opacity-50"
               >
-                {signing ? "Signing Contract..." : "Sign Digital Contract"}
+                {signing ? "Signing Contract..." : "Accept agreement terms"}
               </button>
             )}
           </div>
@@ -1049,7 +1054,7 @@ export function ContractDetailPage() {
             <div className="space-y-2.5 text-xs pb-4 border-b border-slate-800/80">
               <div className="flex items-center justify-between text-slate-400">
                 <span>Base Rent</span>
-                <span className="text-white font-mono">৳{Number(contract.rent).toLocaleString()}</span>
+                <span className="text-white font-mono">৳{Number(contract.effective_rent ?? contract.rent).toLocaleString()}</span>
               </div>
               <div className="flex items-center justify-between text-slate-400">
                 <span>Electricity</span>

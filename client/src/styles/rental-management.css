@@ -1,0 +1,256 @@
+.rental-management {
+  --rm-bg: #12151c;
+  --rm-border: #334155;
+  --rm-ink: #f1f5f9;
+  --rm-muted: #b1becf;
+  color: var(--rm-ink);
+  font-size: 1rem;
+  line-height: 1.6;
+}
+.rental-management h1 {
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 650;
+  letter-spacing: -0.04em;
+  line-height: 1.2;
+  margin-block: 0.4rem 1rem;
+}
+.rental-management h2 {
+  font-size: 1.35rem;
+  font-weight: 600;
+  margin-block: 0 1rem;
+}
+.rental-management h3 {
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+.rental-muted {
+  color: var(--rm-muted);
+}
+.rental-eyebrow {
+  color: #d4b87c;
+  font-size: 0.75rem;
+  letter-spacing: 0.15em;
+  font-weight: 600;
+}
+.rental-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  margin-block-end: 2rem;
+}
+.rental-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+  margin-block: 1.5rem;
+}
+.rental-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 48px;
+  padding: 0.65rem 1rem;
+  border: 1px solid var(--rm-border);
+  border-radius: 0.6rem;
+  background: #1b2330;
+  color: var(--rm-ink);
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: background 0.15s;
+}
+.rental-button:hover,
+.rental-button[aria-pressed="true"] {
+  background: #37465b;
+  border-color: #94a3b8;
+}
+.rental-button:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+.rental-management :is(button, a, input, select, textarea):focus-visible {
+  outline: 3px solid #e6c98e;
+  outline-offset: 3px;
+}
+.rental-card {
+  padding: clamp(1rem, 3vw, 1.75rem);
+  border: 1px solid var(--rm-border);
+  background: var(--rm-bg);
+  border-radius: 1rem;
+  margin-block: 1rem;
+}
+.rental-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr));
+  gap: 1rem;
+}
+.rental-stat {
+  border-inline-start: 2px solid #b49a64;
+  padding-inline-start: 1rem;
+}
+.rental-stat dt {
+  font-size: 0.8rem;
+  color: var(--rm-muted);
+}
+.rental-stat dd {
+  font-size: 1.15rem;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+.rental-badge {
+  display: inline-block;
+  font-size: 0.75rem;
+  border: 1px solid #54657a;
+  padding: 0.2rem 0.5rem;
+  border-radius: 0.35rem;
+  color: #e2e8f0;
+}
+.rental-warning {
+  color: #f2d19b;
+  background: #382d1a;
+  border-color: #7b6336;
+}
+.rental-error {
+  color: #fecaca;
+  border-color: #a34d52;
+}
+.rental-management label {
+  display: block;
+  font-size: 0.9rem;
+  margin-block: 1rem 0.35rem;
+}
+.rental-management :is(input, select, textarea) {
+  width: 100%;
+  min-height: 48px;
+  background: #0d1118;
+  border: 1px solid #607188;
+  border-radius: 0.5rem;
+  padding: 0.65rem;
+  color: var(--rm-ink);
+  font-size: 1rem;
+}
+.rental-management textarea {
+  min-height: 90px;
+  resize: vertical;
+}
+.rental-management input[type="radio"],
+.rental-management input[type="checkbox"] {
+  width: auto;
+  min-height: auto;
+  margin-inline-end: 0.5rem;
+}
+.rental-management fieldset {
+  min-width: 0;
+}
+.rental-management legend {
+  font-weight: 600;
+}
+.rental-management small {
+  display: block;
+  color: var(--rm-muted);
+  font-size: 0.8rem;
+}
+.rental-record {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-block: 1rem;
+  border-block-end: 1px solid var(--rm-border);
+  flex-wrap: wrap;
+}
+.rental-record:last-child {
+  border: 0;
+}
+.rental-record p {
+  overflow-wrap: anywhere;
+  max-width: 100%;
+}
+.rental-table-wrapper {
+  overflow: auto;
+  container-type: inline-size;
+  border: 1px solid var(--rm-border);
+  border-radius: 1rem;
+  max-block-size: 75vh;
+}
+.rental-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  text-align: start;
+}
+.rental-table :is(th, td) {
+  padding: 1.15rem;
+  border-block-end: 1px solid var(--rm-border);
+  vertical-align: top;
+}
+.rental-table thead {
+  position: sticky;
+  inset-block-start: 0;
+  z-index: 2;
+  background: #202a38;
+  font-size: 0.8rem;
+  color: #cbd5e1;
+}
+.rental-table tbody th {
+  position: sticky;
+  inset-inline-start: 0;
+  background: var(--rm-bg);
+  font-weight: 400;
+}
+.rental-tenant-link {
+  display: block;
+  font-weight: 600;
+  color: #f8fafc;
+  min-height: 48px;
+}
+.rental-tenant-link span {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 400;
+  color: #cbd5e1;
+}
+.rental-tenant-link:hover {
+  text-decoration: underline;
+}
+.rental-money {
+  white-space: nowrap;
+}
+@container (width < 720px) {
+  .rental-table,
+  .rental-table tbody,
+  .rental-table tr,
+  .rental-table :is(th, td) {
+    display: block;
+  }
+  .rental-table thead {
+    display: none;
+  }
+  .rental-table tbody th {
+    position: static;
+  }
+  .rental-table tr {
+    border-block-end: 2px solid #63748a;
+    padding: 0.5rem;
+  }
+  .rental-table :is(th, td) {
+    padding: 0.65rem;
+    border: 0;
+  }
+  .rental-table td::before {
+    content: attr(data-label) ": ";
+    font-weight: 600;
+    color: #94a3b8;
+  }
+  .rental-table td small {
+    padding-block-start: 0.2rem;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rental-button {
+    transition: none;
+  }
+}
