@@ -1,32 +1,28 @@
 export function WhyChooseUs() {
   const pillars = [
     {
-      icon: "verified_user",
-      title: "100% Verified Apartments",
+      icon: "search",
+      title: "Find Your Flat With AI",
       description:
-        "Every listing undergoes rigorous physical property inspections and deed verification before publication. Zero duplicate or ghost listings.",
-      stat: "Zero Frauds",
+        "Describe your ideal home in Bangla, Banglish or English. Find listings that match your needs.",
     },
     {
-      icon: "gavel",
-      title: "Digital Legal Leases",
+      icon: "event_available",
+      title: "24-Month Rent Increase Protection",
       description:
-        "Execute legally binding lease contracts online under Bangladesh tenancy laws. Includes pre-agreed terms, rent schedules, and pet policies.",
-      stat: "100% Compliant",
+        "No ordinary rent increase for the first 24 months of a qualifying continuing Nibash tenancy.",
     },
     {
       icon: "account_balance_wallet",
-      title: "Secure Escrow & Receipts",
+      title: "One-Month Advance Rent Limit",
       description:
-        "Security deposits and rental payments are secured with automated digital receipts, instant dispute resolution, and traceable audit trails.",
-      stat: "Automated Tracking",
+        "Standard advance rent is capped at one month; statutory Controller-approved exceptions are separate.",
     },
     {
-      icon: "concierge",
-      title: "Private Concierge Care",
+      icon: "groups",
+      title: "Tenants & Rent in One Dashboard",
       description:
-        "From personalized viewing appointments to move-in coordination and maintenance requests, our luxury support team is at your disposal.",
-      stat: "24/7 Dedicated",
+        "Manage tenancy information, track rent payments, and access digital receipts and contracts.",
     },
   ];
 
@@ -35,54 +31,49 @@ export function WhyChooseUs() {
       {/* Background silver glows */}
       <div className="pointer-events-none absolute top-1/2 right-1/4 w-[600px] h-[600px] rounded-full bg-radial from-slate-400/8 via-transparent to-transparent blur-3xl" />
 
-      <div className="max-w-[1440px] mx-auto px-container-padding relative z-10">
+      <div className="max-w-[1440px] mx-auto px-5 sm:px-8 lg:px-container-padding relative z-10">
         {/* Header */}
-        <div className="text-center max-w-2xl mx-auto mb-20">
-          <h2 className="text-3xl md:text-5xl font-light text-[#f8f9fa] tracking-tight mb-4">
-            Why Discerning Renters{" "}
+        <div className="text-center mx-auto mb-12">
+          <h2 className="text-3xl md:text-4xl xl:text-5xl font-light text-[#f8f9fa] tracking-tight leading-tight mb-4">
+            A Better Rental Experience,{" "}
             <span className="font-serif italic font-normal text-silver-gradient-text">
-              Choose Nibash
+              From Search to Settlement
             </span>
           </h2>
-          <p className="text-[#94a3b8] text-base leading-relaxed">
-            We eliminated informal verbal agreements, double-dealings, and untraceable payments
-            to deliver an elevated residential rental standard.
+          <p className="text-[#a9bdd3] text-base md:text-lg leading-relaxed">
+            Clearer rental terms for tenants. Less administration for owners. One connected platform.
           </p>
         </div>
 
         {/* 4 Pillars Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {pillars.map((item) => (
-            <div
+            <article
               key={item.title}
-              className="group relative rounded-3xl p-8 glass-panel border border-white/10 hover:border-white/30 transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_20px_50px_-15px_rgba(0,0,0,0.85)] flex flex-col justify-between"
+              className="group relative rounded-3xl p-7 glass-panel border border-slate-500/40 hover:border-white/30 transition-colors duration-300"
             >
               <div>
                 <div className="w-14 h-14 rounded-2xl glass-panel-silver border border-white/15 flex items-center justify-center text-[#cbd5e1] mb-6 group-hover:scale-110 transition-transform duration-300 shadow-md">
-                  <span className="material-symbols-outlined text-2xl">
+                  <span aria-hidden="true" className="material-symbols-outlined text-3xl">
                     {item.icon}
                   </span>
                 </div>
 
-                <h3 className="text-lg font-medium text-white mb-2 group-hover:text-[#e2e8f0] transition-colors">
+                <h3 className="text-xl xl:text-2xl font-semibold leading-tight text-white mb-3">
                   {item.title}
                 </h3>
-                <p className="text-sm text-[#94a3b8] leading-relaxed font-normal mb-6">
+                <p className="text-base text-[#b8c5d6] leading-relaxed font-normal">
                   {item.description}
                 </p>
               </div>
 
-              <div className="pt-4 border-t border-white/5 flex items-center justify-between">
-                <span className="text-[11px] font-label-sm uppercase tracking-wider text-[#cbd5e1]">
-                  Standard
-                </span>
-                <span className="text-xs font-semibold text-white/90">
-                  {item.stat}
-                </span>
-              </div>
-            </div>
+            </article>
           ))}
         </div>
+        <p className="mt-7 text-center text-sm md:text-base italic leading-relaxed text-[#b8c5d6]">
+          * Rent protection is a Nibash policy for qualifying tenancies; statutory exceptions may apply to advance rent.{" "}
+          <a href="/policies/rental-protection" className="underline underline-offset-4 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-4">Read the policy.</a>
+        </p>
       </div>
     </section>
   );
