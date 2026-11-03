@@ -10,6 +10,12 @@ import { ensureOwner } from "../services/user.service.js";
 import { z } from "zod";
 import { interpretSearch, interpretationInput } from "../services/search/interpretSearch.js";
 import { fuzzyMatchArea } from "../services/search/fuzzyMatchArea.js";
+import { getMarketplaceStats } from "../services/marketplaceStats.service.js";
+
+export async function getStats(_req: Request, res: Response) {
+  res.setHeader("Cache-Control", "no-store");
+  res.json(await getMarketplaceStats());
+}
 
 const decimalInteger = (minimum: number, maximum: number) => z.string().regex(/^\d+$/).transform(Number).pipe(z.number().int().min(minimum).max(maximum));
 const optionalCount = decimalInteger(0, 100).optional();

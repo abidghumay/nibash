@@ -8,6 +8,7 @@ import { searchRateLimiter, interpretationRateLimiter } from "../middleware/rate
 const router = Router();
 
 router.get("/", asyncHandler(listingController.getAll));
+router.get("/stats", asyncHandler(listingController.getStats));
 router.get("/my", optionalAuthMiddleware, authMiddleware, asyncHandler(listingController.getMy));
 router.get("/search", searchRateLimiter, asyncHandler(listingController.search));
 router.post("/search/interpret", interpretationRateLimiter, asyncHandler(listingController.interpret));

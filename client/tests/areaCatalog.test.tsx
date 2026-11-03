@@ -14,6 +14,7 @@ test("database area catalog loads once for consumers, fails visibly and can retr
   let fail = true;
   let areaRequests = 0;
   globalThis.fetch = (async input => {
+    if (String(input).endsWith("/listings/stats")) return Response.json({ approvedApartments: 0, signedAgreements: 0, areasWithListings: 0 });
     assert.ok(String(input).endsWith("/areas"));
     areaRequests++;
     return new Response(JSON.stringify(fail ? { error: "Unavailable" } : { areas: [{ id: 44, name: "Gulshan", city: "Dhaka" }, { id: 99, name: "Shyamoli", city: "Dhaka" }] }), { status: fail ? 503 : 200 });

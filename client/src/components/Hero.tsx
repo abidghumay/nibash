@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { mockListings } from "../data/mockListings";
 import { useAreas } from "../context/AreaContext";
 import { BuildathonBadge } from "./BuildathonBadge";
+import { MarketplaceStats } from "./MarketplaceStats";
 
 export function Hero() {
   const { areas, loading: areasLoading, error: areasError } = useAreas();
@@ -328,34 +329,7 @@ export function Hero() {
             </div> */}
           </form>
 
-          {/* Social Proof / Metrics Row */}
-          <div className="grid grid-cols-3 gap-6 pt-2 border-t border-white/10">
-            <div>
-              <div className="text-2xl lg:text-3xl font-light text-[#f8f9fa] font-serif">
-                {/* // TODO: Query needed  */}
-                1,200<span className="text-[#cbd5e1] font-sans">+</span>
-              </div>
-              <p className="text-xs text-[#94a3b8] uppercase tracking-wider font-label-sm mt-0.5">
-                Verified Apartments
-              </p>
-            </div>
-            <div>
-              <div className="text-2xl lg:text-3xl font-light text-[#f8f9fa] font-serif">
-                100<span className="text-[#cbd5e1] font-sans">%</span>
-              </div>
-              <p className="text-xs text-[#94a3b8] uppercase tracking-wider font-label-sm mt-0.5">
-                Digital Leases
-              </p>
-            </div>
-            <div>
-              <div className="text-2xl lg:text-3xl font-light text-[#f8f9fa] font-serif">
-                12<span className="text-[#cbd5e1] font-sans">+</span>
-              </div>
-              <p className="text-xs text-[#94a3b8] uppercase tracking-wider font-label-sm mt-0.5">
-                Areas Covered
-              </p>
-            </div>
-          </div>
+          <MarketplaceStats />
         </div>
 
         {/* Right Column: Stable Horizontal Image Swiping Carousel */}
