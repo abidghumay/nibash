@@ -31,6 +31,7 @@ import { OwnerIncomePage } from "./pages/OwnerIncomePage";
 import { MyTenantsPage } from "./pages/MyTenantsPage";
 import { RentalPolicyPage } from "./pages/RentalPolicyPage";
 import { InboxPage } from "./pages/InboxPage";
+import buildathonSticker from "./assets/buildathon-2026-sticker.jpg";
 
 function HomePage() {
   const { user } = useAuth();
@@ -41,6 +42,16 @@ function HomePage() {
 
   return (
     <>
+      <aside aria-label="Built for Ostad presents YUNet AIgnite Buildathon 2026" className="flex justify-center bg-[#090a0c] border-b border-white/10 px-5 py-4">
+        <img
+          src={buildathonSticker}
+          alt="Built for Ostad presents YUNet AIgnite Buildathon 2026 — National AI Hackathon for B2C Solutions"
+          width={1280}
+          height={454}
+          fetchPriority="high"
+          className="block w-full max-w-[360px] h-auto rounded-xl"
+        />
+      </aside>
       <Hero />
       <ActualListings />
       <div id="how-it-works">
