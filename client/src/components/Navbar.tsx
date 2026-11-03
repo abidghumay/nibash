@@ -10,7 +10,7 @@ export function Navbar() {
 
   return (
     <header className="bg-[#090a0c]/90 backdrop-blur-xl w-full h-20 border-b border-white/10 sticky top-0 z-50 transition-all duration-300">
-      <div className="flex justify-between items-center px-4 sm:px-6 lg:px-container-padding max-w-[1440px] mx-auto w-full h-full">
+      <div className="flex justify-between items-center gap-3 px-4 sm:px-6 lg:px-4 max-w-[1440px] mx-auto w-full h-full">
         {/* Brand Logo */}
         <div className="flex items-center shrink-0">
         <Link
@@ -29,7 +29,7 @@ export function Navbar() {
           </div>
         </Link>
         {location.pathname === "/" && !user?.is_verifier && (
-          <div className="hidden xl:block ml-4 pl-4 border-l border-white/15">
+          <div className="hidden xl:block ml-3 pl-3 border-l border-white/15">
             <BuildathonBadge className="w-[164px]" />
           </div>
         )}
@@ -37,7 +37,7 @@ export function Navbar() {
 
         {/* Center Desktop Navigation */}
         {!user?.is_verifier && (
-          <nav className="hidden md:flex items-center gap-2.5 lg:gap-3.5 xl:gap-5 mx-1 lg:mx-3 shrink">
+          <nav className="hidden md:flex items-center gap-2.5 lg:gap-3 xl:gap-4 mx-1 lg:mx-2 shrink">
             <Link
               to="/listings"
               className={`text-[11px] xl:text-xs uppercase tracking-wider font-label-sm transition-colors whitespace-nowrap ${
