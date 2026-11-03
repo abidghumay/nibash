@@ -1,6 +1,13 @@
 import { pool } from "../db/pool.js";
 import { getPublicUrl } from "./media.service.js";
 
+export async function getAreas() {
+  const result = await pool.query<{ id: number; name: string; city: string }>(
+    "SELECT id, name, city FROM areas ORDER BY name, city, id",
+  );
+  return result.rows;
+}
+
 export interface AreaStat {
   id: number;
   name: string;

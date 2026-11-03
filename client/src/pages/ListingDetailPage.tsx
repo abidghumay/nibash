@@ -10,6 +10,7 @@ import {
   saveUserApplication,
 } from "../utils/applicationStorage";
 import { getAreaName } from "../utils/areaLookup";
+import { useAreas } from "../context/AreaContext";
 import { ListingMapPreview } from "../components/ListingMapPreview";
 import { getAmenityIcon, getAmenityMeta } from "../utils/amenities";
 import { DocumentViewerModal } from "../components/DocumentViewerModal";
@@ -151,6 +152,7 @@ function formatDueDate(day: number | string) {
 }
 
 export function ListingDetailPage() {
+  const { areas } = useAreas();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const location = useLocation();
@@ -2365,7 +2367,7 @@ export function ListingDetailPage() {
                   Location
                 </span>
                 <span className="text-base font-bold text-white">
-                  {getAreaName(listing.area_id)}
+                  {getAreaName(listing.area_id, areas)}
                 </span>
               </div>
             </div>

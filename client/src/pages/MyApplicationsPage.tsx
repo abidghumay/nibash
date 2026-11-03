@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { apiClient } from "../api/client";
 import { useAuth } from "../context/AuthContext";
 import { getAreaName } from "../utils/areaLookup";
+import { useAreas } from "../context/AreaContext";
 
 export interface TenantApplication {
   tenant_id: number;
@@ -73,6 +74,7 @@ function StatusBadge({ status, contractStatus }: { status: string; contractStatu
 }
 
 export function MyApplicationsPage() {
+  const { areas } = useAreas();
   const { user, token } = useAuth();
   const [applications, setApplications] = useState<TenantApplication[]>([]);
   const [loading, setLoading] = useState(true);
@@ -212,7 +214,7 @@ export function MyApplicationsPage() {
       {!loading && !error && applications.length > 0 && (
         <div className="flex flex-col gap-4">
           {applications.map((app) => {
-            const areaName = app.area_id ? getAreaName(app.area_id) : null;
+            const areaName = app.area_id ? getAreaName(app.area_id, areas) : null;
             const appliedDate = app.applied_at
               ? new Date(app.applied_at).toLocaleDateString(undefined, {
                   year: "numeric",

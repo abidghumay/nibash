@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import type { Listing } from "../types/listing";
 import type { BackendListing } from "../pages/ListingsPage";
 import { getAreaName } from "../utils/areaLookup";
+import { useAreas } from "../context/AreaContext";
 import { useAuth } from "../context/AuthContext";
 import { hasUserApplied } from "../utils/applicationStorage";
 import { apiClient } from "../api/client";
@@ -26,6 +27,7 @@ export function PropertyCard({
   onSelect,
   onOpenAppInfo,
 }: PropertyCardProps) {
+  const { areas } = useAreas();
   const navigate = useNavigate();
   const { user } = useAuth();
   const [isStarred, setIsStarred] = useState(initialStarred);
@@ -74,7 +76,7 @@ export function PropertyCard({
   // Normalize Location using area code lookup or existing string
   const location =
     "area_id" in listing && listing.area_id
-      ? getAreaName(listing.area_id)
+      ? getAreaName(listing.area_id, areas)
       : "location" in listing && listing.location
       ? listing.location
       : "Dhaka";

@@ -129,8 +129,8 @@ test("search SQL and listing routes use isolated PostgreSQL fixtures", async t =
   });
 
   await t.test("empty matches are returned without dropping mandatory filters", async () => {
-    assert.deepEqual(await search({ ...mandatory, minRent: 29000 }), { listings: [], nextCursor: null });
-    assert.deepEqual(await search({ ...mandatory, minRent: 29000, keywords: "sunflwer" }), { listings: [], nextCursor: null });
+    assert.deepEqual(await search({ ...mandatory, minRent: 29000 }), { listings: [], nextCursor: null, resolvedAreaId: mirpur });
+    assert.deepEqual(await search({ ...mandatory, minRent: 29000, keywords: "sunflwer" }), { listings: [], nextCursor: null, resolvedAreaId: mirpur });
   });
 
   await t.test("cursor pagination keeps popularity and equal-view ordering without keywords", async () => {

@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { mockListings } from "../data/mockListings";
-import { DHAKA_AREAS } from "../utils/areaLookup";
+import { useAreas } from "../context/AreaContext";
 
 export function Hero() {
+  const { areas, loading: areasLoading, error: areasError } = useAreas();
   const navigate = useNavigate();
   // Search filter states
   const [query, setQuery] = useState("");
@@ -186,13 +187,14 @@ export function Hero() {
                 </div>
                 <select
                   value={areaName}
+                  disabled={areasLoading || Boolean(areasError)}
                   onChange={(e) => setAreaName(e.target.value)}
                   className="w-full bg-transparent text-sm font-medium text-[#f8f9fa] focus:outline-none cursor-pointer"
                 >
                   <option value="All Areas" className="bg-[#12151c] text-white">
-                    All Areas
+                    {areasLoading ? "Loading areas…" : areasError ? "Areas unavailable" : "All Areas"}
                   </option>
-                  {DHAKA_AREAS.map((area) => (
+                  {areas.map((area) => (
                     <option
                       key={area.id}
                       value={area.name}

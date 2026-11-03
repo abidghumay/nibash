@@ -16,6 +16,10 @@ const aliases: Record<string, string[]> = {
   "Swimming Pool": ["pool", "সুইমিং পুল"], Gym: ["জিম"], "Internet Ready": ["broadband ready", "internet ready"],
 };
 
+export function catalogNames(name: string): string[] {
+  return [name, ...(aliases[name] ?? [])];
+}
+
 export function normalizeCatalogText(text: string) {
   return text.normalize("NFKC").toLocaleLowerCase("en").replace(/[\s\p{P}]/gu, "");
 }

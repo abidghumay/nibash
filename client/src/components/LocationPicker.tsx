@@ -25,11 +25,26 @@ export function LocationPicker({
 }: LocationPickerProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const autocompleteContainerRef = useRef<HTMLDivElement>(null);
+  const mapInstanceRef = useRef<google.maps.Map | null>(null);
+  const markerInstanceRef = useRef<google.maps.marker.AdvancedMarkerElement | null>(null);
+  const latestRef = useRef({ latitude, longitude, onChange });
+  const selectionVersion = useRef(0);
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => { latestRef.current = { latitude, longitude, onChange }; });
+
+  useEffect(() => {
+    selectionVersion.current++;
+    const position = { lat: latitude, lng: longitude };
+    if (markerInstanceRef.current) markerInstanceRef.current.position = position;
+    mapInstanceRef.current?.panTo(position);
+  }, [latitude, longitude]);
+
   useEffect(() => {
     let cancelled = false;
+    let autocomplete: google.maps.places.PlaceAutocompleteElement | null = null;
+    let removeAutocompleteListener: (() => void) | undefined;
     ensureConfigured();
 
     (async () => {
@@ -47,7 +62,7 @@ export function LocationPicker({
           return;
 
         const map = new Map(mapRef.current, {
-          center: { lat: latitude, lng: longitude },
+          center: { lat: latestRef.current.latitude, lng: latestRef.current.longitude },
           zoom: 15,
           mapId: MAP_ID,
           colorScheme: google.maps.ColorScheme.DARK,
@@ -55,37 +70,55 @@ export function LocationPicker({
         });
 
         const marker = new AdvancedMarkerElement({
-          position: { lat: latitude, lng: longitude },
+          position: { lat: latestRef.current.latitude, lng: latestRef.current.longitude },
           map,
           gmpDraggable: true,
         });
+        mapInstanceRef.current = map;
+        markerInstanceRef.current = marker;
 
         marker.addListener("dragend", () => {
           const pos = marker.position;
-          if (pos) onChange(Number(pos.lat), Number(pos.lng));
+          if (pos) {
+            selectionVersion.current++;
+            setError(null);
+            const lat = typeof pos.lat === "function" ? pos.lat() : Number(pos.lat);
+            const lng = typeof pos.lng === "function" ? pos.lng() : Number(pos.lng);
+            latestRef.current.onChange(lat, lng);
+          }
         });
 
         map.addListener("click", (e: google.maps.MapMouseEvent) => {
           if (!e.latLng) return;
+          selectionVersion.current++;
+          setError(null);
           marker.position = e.latLng;
-          onChange(e.latLng.lat(), e.latLng.lng());
+          latestRef.current.onChange(e.latLng.lat(), e.latLng.lng());
         });
 
-        const autocomplete = new PlaceAutocompleteElement({
+        autocomplete = new PlaceAutocompleteElement({
           includedRegionCodes: ["bd"],
         });
         autocompleteContainerRef.current.appendChild(autocomplete);
 
-        autocomplete.addEventListener("gmp-select", async (event: any) => {
-          const place = event.placePrediction.toPlace();
-          await place.fetchFields({ fields: ["location"] });
-          const loc = place.location;
-          if (!loc) return;
-          map.panTo(loc);
-          map.setZoom(16);
-          marker.position = loc;
-          onChange(loc.lat(), loc.lng());
-        });
+        const handleSelect = async (event: Event) => {
+          const version = ++selectionVersion.current;
+          setError(null);
+          try {
+            const place = (event as google.maps.places.PlacePredictionSelectEvent).placePrediction.toPlace();
+            await place.fetchFields({ fields: ["location"] });
+            const loc = place.location;
+            if (cancelled || version !== selectionVersion.current || !loc) return;
+            map.panTo(loc);
+            map.setZoom(16);
+            marker.position = loc;
+            latestRef.current.onChange(loc.lat(), loc.lng());
+          } catch {
+            if (!cancelled && version === selectionVersion.current) setError("Could not find that location. Try again or place the pin on the map.");
+          }
+        };
+        autocomplete.addEventListener("gmp-select", handleSelect);
+        removeAutocompleteListener = () => autocomplete?.removeEventListener("gmp-select", handleSelect);
 
         setLoaded(true);
       } catch (err) {
@@ -100,6 +133,17 @@ export function LocationPicker({
 
     return () => {
       cancelled = true;
+      removeAutocompleteListener?.();
+      autocomplete?.remove();
+      if (markerInstanceRef.current) {
+        google.maps.event.clearInstanceListeners(markerInstanceRef.current);
+        markerInstanceRef.current.map = null;
+        markerInstanceRef.current = null;
+      }
+      if (mapInstanceRef.current) {
+        google.maps.event.clearInstanceListeners(mapInstanceRef.current);
+        mapInstanceRef.current = null;
+      }
     };
   }, []);
 
@@ -116,7 +160,7 @@ export function LocationPicker({
         <p className="text-xs text-slate-400">Loading map...</p>
       )}
       <p className="text-[11px] text-slate-500">
-        Click the map or drag the pin to set the exact location. Lat:{" "}
+        Click the map or drag the pin to set the exact location. Listings are supported in the Dhaka service area. Lat:{" "}
         {latitude.toFixed(5)}, Lng: {longitude.toFixed(5)}
       </p>
     </div>

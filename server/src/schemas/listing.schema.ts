@@ -9,7 +9,8 @@ export const createListingSchema = z.object({
   on_which_floor: z
     .number()
     .nonnegative("on which floor must be a non-negative number"),
-  area_id: z.number().positive("area id must be a positive number").optional(),
+  // Accepted for older clients; creation always derives the area from the pin.
+  area_id: z.number().int().positive("area id must be a positive number").optional(),
   latitude: z
     .number()
     .min(-90, "latitude must be between -90 and 90")

@@ -9,7 +9,8 @@ import {
 } from "../utils/applicationStorage";
 import { ApplicationInfoModal } from "../components/ApplicationInfoModal";
 import { PropertyCard } from "../components/PropertyCard";
-import { DHAKA_AREAS, getAreaIdByName } from "../utils/areaLookup";
+import { getAreaIdByName } from "../utils/areaLookup";
+import { useAreas } from "../context/AreaContext";
 import { NaturalLanguageSearch } from "../components/NaturalLanguageSearch";
 import { buildStrictSearchParams, getNaturalSearchBlock, mergeSearchFilters, type NaturalSearchState } from "../utils/naturalLanguageSearch";
 import type { ListingImage } from "../types/listing";
@@ -46,6 +47,7 @@ export interface BackendListing {
 }
 
 export function ListingsPage() {
+  const { areas, loading: areasLoading, error: areasError } = useAreas();
   const { user, token } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -120,6 +122,7 @@ export function ListingsPage() {
 
   // Search execution states
   const [searchResults, setSearchResults] = useState<BackendListing[] | null>(null);
+  const [resolvedAreaId, setResolvedAreaId] = useState<number | null>(null);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
@@ -273,10 +276,6 @@ export function ListingsPage() {
 
         if (trimmedArea) {
           params.set("area", trimmedArea);
-          const areaId = getAreaIdByName(trimmedArea);
-          if (areaId !== null) {
-            params.set("areaId", areaId.toString());
-          }
         }
 
         if (bedrooms !== null && !isNaN(bedrooms)) {
@@ -294,7 +293,7 @@ export function ListingsPage() {
 
         const effectiveParams = naturalMode ? buildStrictSearchParams(mergedNatural.filters) : params;
         const requestParams = effectiveParams.toString();
-        const data = await apiClient.get<{ listings: BackendListing[]; nextCursor?: string | null }>(
+        const data = await apiClient.get<{ listings: BackendListing[]; nextCursor?: string | null; resolvedAreaId?: number | null }>(
           `/listings/search?${requestParams}`,
           { signal: abortController.signal }
         );
@@ -303,6 +302,7 @@ export function ListingsPage() {
           activeRequestParams.current = requestParams;
           resultIdentity.current = identity;
           setSearchResults(data.listings || []);
+          setResolvedAreaId(data.resolvedAreaId ?? null);
           setNextCursor(data.nextCursor || null);
         }
       } catch (err: any) {
@@ -399,9 +399,9 @@ export function ListingsPage() {
       !searchTerm.trim() ||
       item.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.description?.toLowerCase().includes(searchTerm.toLowerCase());
-    const targetAreaId = getAreaIdByName(areaName);
+    const targetAreaId = getAreaIdByName(areaName, areas) ?? (resultIdentity.current === searchIdentity ? resolvedAreaId : null);
     const matchesArea =
-      !areaName.trim() || targetAreaId === null || Number(item.area_id) === targetAreaId;
+      !areaName.trim() || (targetAreaId !== null && Number(item.area_id) === targetAreaId);
     const matchesBed = bedrooms === null || Number(item.bedroom_count) === bedrooms;
     const matchesRent = maxRent === null || (item.rent != null && Number(item.rent) <= maxRent);
     const matchesAmenities =
@@ -415,7 +415,7 @@ export function ListingsPage() {
   // Base list of public listings: backend search results if filter active, otherwise default all listings
   const basePublicListings = naturalMode
     ? (naturalBlock || resultIdentity.current !== searchIdentity ? [] : searchResults || [])
-    : searchResults !== null ? searchResults : listings;
+    : isFilterActive ? (resultIdentity.current === searchIdentity ? searchResults || [] : []) : listings;
 
   // Filter out user's own listings from public view when logged in
   const displayedPublicListings = user
@@ -428,9 +428,9 @@ export function ListingsPage() {
       !searchTerm.trim() ||
       item.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.description?.toLowerCase().includes(searchTerm.toLowerCase());
-    const targetAreaId = getAreaIdByName(areaName);
+    const targetAreaId = getAreaIdByName(areaName, areas) ?? (resultIdentity.current === searchIdentity ? resolvedAreaId : null);
     const matchesArea =
-      !areaName.trim() || targetAreaId === null || Number(item.area_id) === targetAreaId;
+      !areaName.trim() || (targetAreaId !== null && Number(item.area_id) === targetAreaId);
     const matchesBed = bedrooms === null || Number(item.bedroom_count) === bedrooms;
     const matchesRent = maxRent === null || (item.rent != null && Number(item.rent) <= maxRent);
     return matchesText && matchesArea && matchesBed && matchesRent;
@@ -496,11 +496,13 @@ export function ListingsPage() {
             </div>
             <select
               value={areaName || "all"}
+              disabled={areasLoading || Boolean(areasError)}
               onChange={(e) => handleAreaChange(e.target.value)}
               className="w-full bg-[#12151c] text-white border border-slate-700 rounded-xl pl-9 pr-8 py-3 text-sm focus:outline-none focus:border-white transition-colors appearance-none cursor-pointer shadow-sm"
             >
-              <option value="all" className="bg-[#12151c] text-white">All Areas</option>
-              {DHAKA_AREAS.map((area) => (
+              <option value="all" className="bg-[#12151c] text-white">{areasLoading ? "Loading areas…" : areasError ? "Areas unavailable" : "All Areas"}</option>
+              {areaName && !areas.some(area => area.name === areaName) && <option value={areaName}>{areaName}</option>}
+              {areas.map((area) => (
                 <option key={area.id} value={area.name} className="bg-[#12151c] text-white">
                   {area.name}
                 </option>

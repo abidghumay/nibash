@@ -9,6 +9,7 @@ import * as mediaService from "../services/media.service.js";
 import { ensureOwner } from "../services/user.service.js";
 import { z } from "zod";
 import { interpretSearch, interpretationInput } from "../services/search/interpretSearch.js";
+import { fuzzyMatchArea } from "../services/search/fuzzyMatchArea.js";
 
 const decimalInteger = (minimum: number, maximum: number) => z.string().regex(/^\d+$/).transform(Number).pipe(z.number().int().min(minimum).max(maximum));
 const optionalCount = decimalInteger(0, 100).optional();
@@ -17,6 +18,8 @@ const addedSearchParams = z.object({
   minRent: optionalRent, minBedrooms: optionalCount,
   pets: z.enum(["true", "false"]).optional(), keywords: z.string().max(600).optional(),
   strict: z.enum(["0", "1"]).optional(),
+  areaId: decimalInteger(1, 2147483647).optional(),
+  area: z.string().max(120).optional(), areaName: z.string().max(120).optional(),
 });
 const strictSearchParams = addedSearchParams.extend({
   bedrooms: optionalCount, bathrooms: optionalCount, floor: optionalCount,
@@ -48,8 +51,21 @@ export async function getMy(req: Request, res: Response) {
 }
 
 export async function search(req: Request, res: Response) {
+  if (Object.keys(req.query).some(key => /^(?:area|areaId|areaName)\[/.test(key))) {
+    res.status(400).json({ error: "Invalid area filter. Please select an area from the list." });
+    return;
+  }
   const extra = (req.query.strict === "1" ? strictSearchParams : addedSearchParams).safeParse(req.query);
   if (!extra.success) { res.status(400).json({ error: "Invalid search filters. Use non-negative whole numbers and pets=true or false." }); return; }
+  if (extra.data.area !== undefined && extra.data.areaName !== undefined) {
+    const [area, alternate] = await Promise.all([
+      fuzzyMatchArea(extra.data.area), fuzzyMatchArea(extra.data.areaName),
+    ]);
+    if (!area || !alternate || area.id !== alternate.id) {
+      res.status(400).json({ error: "Conflicting or unverified area filters. Please select one area." });
+      return;
+    }
+  }
   if (req.query.q !== undefined && typeof req.query.q !== "string") { res.status(400).json({ error: "Invalid search query." }); return; }
   const q = (req.query.q as string) ?? null;
 

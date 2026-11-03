@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { apiClient } from '../api/client';
-import { DHAKA_AREAS } from '../utils/areaLookup';
+import { useAreas } from '../context/AreaContext';
 import type { NaturalSearchState, SearchFilters, SearchInterpretation } from '../utils/naturalLanguageSearch';
 
 const control = 'w-full rounded-lg border border-slate-600 bg-slate-950 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-slate-300';
@@ -17,6 +17,7 @@ export function NaturalLanguageSearch({ state, onChange, manualKey, amenityNames
   amenityNames: string[];
   onOrdinarySearch: (query: string) => void;
 }) {
+  const { areas, loading: areasLoading, error: areasError } = useAreas();
   const [query, setQuery] = useState('');
   const [error, setError] = useState('');
   const requestVersion = useRef(0);
@@ -98,11 +99,11 @@ export function NaturalLanguageSearch({ state, onChange, manualKey, amenityNames
           <p className="text-sm font-semibold text-white">Interpreted requirements <span className="font-normal text-slate-400">— edit or clear a field to change it</span></p>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <label className="space-y-1 text-sm text-slate-300">Area
-              <select className={control} value={interpretation.filters.areaName ?? (interpretation.filters.areaId ? `id:${interpretation.filters.areaId}` : '')} onChange={(event) => editFilter('areaName', event.target.value || undefined)}>
-                <option value="">Any area</option>
-                {interpretation.filters.areaName && !DHAKA_AREAS.some((area) => area.name === interpretation.filters.areaName) && <option value={interpretation.filters.areaName}>{interpretation.filters.areaName}</option>}
+              <select disabled={areasLoading || Boolean(areasError)} className={control} value={interpretation.filters.areaName ?? (interpretation.filters.areaId ? `id:${interpretation.filters.areaId}` : '')} onChange={(event) => editFilter('areaName', event.target.value || undefined)}>
+                <option value="">{areasLoading ? 'Loading areas…' : areasError ? 'Areas unavailable' : 'Any area'}</option>
+                {interpretation.filters.areaName && !areas.some((area) => area.name === interpretation.filters.areaName) && <option value={interpretation.filters.areaName}>{interpretation.filters.areaName}</option>}
                 {!interpretation.filters.areaName && interpretation.filters.areaId && <option value={`id:${interpretation.filters.areaId}`}>Area #{interpretation.filters.areaId}</option>}
-                {DHAKA_AREAS.map((area) => <option key={area.name} value={area.name}>{area.name}</option>)}
+                {areas.map((area) => <option key={area.name} value={area.name}>{area.name}</option>)}
               </select>
             </label>
             {numberFields.map(([key, label]) => <label key={key} className="space-y-1 text-sm text-slate-300">{label}

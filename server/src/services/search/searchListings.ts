@@ -4,6 +4,7 @@ import { parseSearchQuery } from "./parseSearchQuery.js";
 import { fuzzyMatchArea } from "./fuzzyMatchArea.js";
 import { logSearchMiss } from "./logSearchMiss.js";
 import { AppError } from "../../errors/AppError.js";
+import { getAreas } from "../area.service.js";
 
 export interface SearchListingsParams {
   q?: string | null;
@@ -32,6 +33,7 @@ export interface SearchCursor {
 export interface SearchListingsResult {
   listings: any[];
   nextCursor: string | null;
+  resolvedAreaId: number | null;
   total?: number;
 }
 
@@ -61,7 +63,8 @@ export async function searchListings(
   params: SearchListingsParams,
 ): Promise<SearchListingsResult> {
   const rawQuery = params.q?.trim() || "";
-  const parsed = parseSearchQuery(params.strict ? "" : rawQuery);
+  const catalog = rawQuery && !params.strict ? await getAreas() : [];
+  const parsed = parseSearchQuery(params.strict ? "" : rawQuery, catalog.map(area => area.name));
 
   // 1. Resolve structured filters (explicit params override parsed values)
   const bedrooms = params.bedrooms !== undefined && params.bedrooms !== null
@@ -90,14 +93,22 @@ export async function searchListings(
 
   let areaId: number | null = null;
   if (params.areaId !== undefined && params.areaId !== null) {
+    if (!Number.isSafeInteger(params.areaId) || params.areaId <= 0) throw new AppError(400, "Invalid area ID.");
+    const area = await pool.query("SELECT id FROM areas WHERE id=$1", [params.areaId]);
+    if (!area.rows.length) throw new AppError(400, "The requested area could not be verified.");
     areaId = params.areaId;
+    if (params.areaName?.trim()) {
+      const matched = await fuzzyMatchArea(params.areaName);
+      if (!matched || matched.id !== areaId) throw new AppError(400, "Conflicting area filters. Please select an area again.");
+    }
   } else if (params.areaName) {
     const matched = await fuzzyMatchArea(params.areaName);
     if (matched) areaId = matched.id;
-    else if (params.strict) throw new AppError(400, "The requested area could not be verified.");
+    else throw new AppError(400, "The requested area could not be verified. Please select an area from the list.");
   } else if (parsed.areaHint) {
     const matched = await fuzzyMatchArea(parsed.areaHint);
     if (matched) areaId = matched.id;
+    else throw new AppError(400, "The requested area could not be verified.");
   }
 
   const amenityNames = params.amenityNames || [];
@@ -323,6 +334,7 @@ export async function searchListings(
   return {
     listings: withImages,
     nextCursor,
+    resolvedAreaId: areaId,
   };
 }
 

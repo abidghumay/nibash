@@ -1,3 +1,5 @@
+import { canonicalAlias, catalogNames } from "./searchCatalog.js";
+
 export interface ParsedSearchQuery {
   bedrooms: number | null;
   bathrooms: number | null;
@@ -8,22 +10,7 @@ export interface ParsedSearchQuery {
   keywords: string;
 }
 
-const KNOWN_AREAS = [
-  "Azimpur",
-  "Dhanmondi",
-  "Mohammadpur",
-  "Gulshan",
-  "Banani",
-  "Mirpur",
-  "Khilkhet",
-  "Uttara",
-  "Bashundhara",
-  "Tejgaon",
-  "Lalbagh",
-  "Badda",
-];
-
-export function parseSearchQuery(query: string | null | undefined): ParsedSearchQuery {
+export function parseSearchQuery(query: string | null | undefined, areaNames: string[] = []): ParsedSearchQuery {
   const result: ParsedSearchQuery = {
     bedrooms: null,
     bathrooms: null,
@@ -103,34 +90,20 @@ export function parseSearchQuery(query: string | null | undefined): ParsedSearch
     text = text.replace(petMatch[0], " ");
   }
 
-  // 5. Extract area hints
-  // First check if an area is preceded by in/near/at/around
-  const areaPrepositionRegex = new RegExp(
-    `\\b(?:in|near|at|around)\\s+(${KNOWN_AREAS.join("|")})\\b`,
-    "i",
-  );
-  const prepAreaMatch = text.match(areaPrepositionRegex);
-  if (prepAreaMatch) {
-    const matchedName = prepAreaMatch[1];
-    const canonical = KNOWN_AREAS.find(
-      (a) => a.toLowerCase() === matchedName.toLowerCase(),
+  // 5. Use current database names and their explicit aliases. Longest names
+  // win (e.g. Gulshan 2 before Gulshan); Unicode boundaries support Bangla.
+  const names = [...new Set(areaNames.flatMap(catalogNames))]
+    .sort((a, b) => b.length - a.length)
+    .map(name => name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+  if (names.length) {
+    const areaRegex = new RegExp(
+      `(?<![\\p{L}\\p{N}_])(?:(?:in|near|at|around)\\s+)?(${names.join("|")})(?![\\p{L}\\p{N}_])`, "iu",
     );
-    result.areaHint = canonical || matchedName;
-    text = text.replace(prepAreaMatch[0], " ");
-  } else {
-    // Check if any known area appears standalone
-    const standaloneAreaRegex = new RegExp(
-      `\\b(${KNOWN_AREAS.join("|")})\\b`,
-      "i",
-    );
-    const standaloneMatch = text.match(standaloneAreaRegex);
-    if (standaloneMatch) {
-      const matchedName = standaloneMatch[1];
-      const canonical = KNOWN_AREAS.find(
-        (a) => a.toLowerCase() === matchedName.toLowerCase(),
-      );
-      result.areaHint = canonical || matchedName;
-      text = text.replace(standaloneMatch[0], " ");
+    const match = text.match(areaRegex);
+    if (match) {
+      const matched = canonicalAlias(match[1]);
+      result.areaHint = areaNames.find(name => name.toLowerCase() === matched.toLowerCase()) ?? matched;
+      text = text.replace(match[0], " ");
     }
   }
 

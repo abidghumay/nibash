@@ -6,6 +6,7 @@ import {
 } from "../schemas/listing.schema.js";
 import { getPublicUrl } from "./media.service.js";
 import { searchListings as runSearch } from "./search/index.js";
+import { isSupportedLocation } from "./areaCoverage.js";
 
 export async function getAllListings() {
   const result = await pool.query(
@@ -155,17 +156,20 @@ type Area = {
 
 const EARTH_RADIUS_METERS = 6_371_000;
 
-// Areas are stored as circular regions centered on their saved coordinates.
+// Assign an approximate neighborhood only inside our service envelope.
 export function findAreaIdForCoordinates(
   latitude: number,
   longitude: number,
   areas: Area[],
 ): number | null {
+  if (!isSupportedLocation(latitude, longitude)) return null;
   const latitudeRadians = (latitude * Math.PI) / 180;
   let closestAreaId: number | null = null;
   let closestDistance = Number.POSITIVE_INFINITY;
 
   for (const area of areas) {
+    if (!Number.isFinite(Number(area.latitude)) || !Number.isFinite(Number(area.longitude)) ||
+        !isSupportedLocation(Number(area.latitude), Number(area.longitude))) continue;
     const areaLatitudeRadians = (Number(area.latitude) * Math.PI) / 180;
     const latitudeDelta = areaLatitudeRadians - latitudeRadians;
     const longitudeDelta =
@@ -180,7 +184,7 @@ export function findAreaIdForCoordinates(
       EARTH_RADIUS_METERS *
       Math.atan2(Math.sqrt(haversine), Math.sqrt(1 - haversine));
 
-    if (distance < closestDistance) {
+    if (distance < closestDistance || (distance === closestDistance && area.id < (closestAreaId ?? Infinity))) {
       closestAreaId = area.id;
       closestDistance = distance;
     }
@@ -208,7 +212,7 @@ export async function createListing(ownerId: number, data: CreateListingInput) {
   } = data;
 
   const areaResult = await pool.query<Area>(
-    "SELECT id, latitude, longitude, radius FROM areas",
+    "SELECT id, latitude, longitude, radius FROM areas WHERE LOWER(city) = 'dhaka'",
   );
   const areaId = findAreaIdForCoordinates(
     latitude,
@@ -288,11 +292,6 @@ export async function updateListing(
   ownerId: number,
   data: UpdateListingInput,
 ) {
-  const listing = await pool.query("SELECT * FROM listings WHERE id=$1", [id]);
-  if (listing.rows.length === 0) throw new AppError(404, "listing not found");
-  if (listing.rows[0].owner_id !== ownerId)
-    throw new AppError(403, "not authorized");
-
   const {
     title,
     description,
@@ -309,25 +308,42 @@ export async function updateListing(
     security_deposit,
   } = data;
 
-  if (area_id !== undefined) {
-    const area = await pool.query("SELECT 1 FROM areas WHERE id=$1", [area_id]);
-    if (area.rows.length === 0)
-      throw new AppError(400, "area_id does not exist");
-  }
-
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
+    const listing = await client.query("SELECT * FROM listings WHERE id=$1 FOR UPDATE", [id]);
+    if (listing.rows.length === 0) throw new AppError(404, "listing not found");
+    const existing = listing.rows[0];
+    if (existing.owner_id !== ownerId) throw new AppError(403, "not authorized");
+
+    const latitude = data.latitude ?? Number(existing.latitude);
+    const longitude = data.longitude ?? Number(existing.longitude);
+    const locationChanged = latitude !== Number(existing.latitude) || longitude !== Number(existing.longitude);
+    let resolvedAreaId = existing.area_id;
+    // Unchanged legacy locations stay editable; moving a pin or overriding an
+    // area must pass the same geographic checks as creation.
+    if (locationChanged || (area_id !== undefined && area_id !== existing.area_id)) {
+      const areas = await client.query<Area>(
+        "SELECT id, latitude, longitude, radius FROM areas WHERE LOWER(city) = 'dhaka'",
+      );
+      resolvedAreaId = findAreaIdForCoordinates(latitude, longitude, areas.rows);
+      if (resolvedAreaId === null) throw new AppError(400, "selected location is outside supported areas");
+      if (area_id !== undefined && area_id !== resolvedAreaId) {
+        throw new AppError(400, "area_id does not match the selected location");
+      }
+    }
     await client.query(
-      "UPDATE listings SET title=COALESCE($1,title), description=COALESCE($2,description), bedroom_count=COALESCE($3,bedroom_count), bathroom_count=COALESCE($4,bathroom_count), on_which_floor=COALESCE($5,on_which_floor), area_id=COALESCE($6,area_id) WHERE id=$7",
+      "UPDATE listings SET title=COALESCE($1,title), description=COALESCE($2,description), bedroom_count=COALESCE($3,bedroom_count), bathroom_count=COALESCE($4,bathroom_count), on_which_floor=COALESCE($5,on_which_floor), area_id=$6, latitude=$8, longitude=$9 WHERE id=$7",
       [
         title ?? null,
         description ?? null,
         bedroom_count ?? null,
         bathroom_count ?? null,
         on_which_floor ?? null,
-        area_id ?? null,
+        resolvedAreaId,
         id,
+        latitude,
+        longitude,
       ],
     );
     const termsUpdates: string[] = [];

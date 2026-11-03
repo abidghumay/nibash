@@ -4,6 +4,7 @@ import * as areaController from "../controllers/area.controller.js";
 
 const router = Router();
 
+router.get("/", asyncHandler(areaController.getAll));
 router.get("/stats", asyncHandler(areaController.getStats));
 
 export default router;

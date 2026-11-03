@@ -269,8 +269,10 @@ export function ListingFormPage() {
         const data = res.listing;
         setTitle(data.title || "");
         setDescription(data.description || "");
-        setLatitude(parseFloat(data.latitude) || 23.7917);
-        setLongitude(parseFloat(data.longitude) || 90.4167);
+        const savedLatitude = parseFloat(data.latitude);
+        const savedLongitude = parseFloat(data.longitude);
+        setLatitude(Number.isFinite(savedLatitude) ? savedLatitude : 23.7917);
+        setLongitude(Number.isFinite(savedLongitude) ? savedLongitude : 90.4167);
         setBedroomCount(String(data.bedroom_count || 1));
         setBathroomCount(String(data.bathroom_count || 1));
         setOnWhichFloor(String(data.on_which_floor || 1));
