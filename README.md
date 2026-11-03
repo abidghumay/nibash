@@ -158,4 +158,4 @@ The November 2026 rental-management extension adds continuing-tenancy rent prote
 
 See [the implementation report and synthetic demo](docs/rental-protection-report.md) for architecture, verification, remaining legal/operational boundaries and a repeatable demonstration.
 
-Existing installations need additive migrations **018 then 019** before running the new application. Do not replay the original destructive initialization migrations against existing data. No deployment or configured-database migration is performed automatically.
+Existing installations need additive migrations **018 then 019** before running the new application. Do not replay the original destructive initialization migrations against existing data. These migrations and the application release were applied to production on 3 November 2026; see [the production rollout record](docs/rental-production-rollout.md). New installations still require their own migration process.

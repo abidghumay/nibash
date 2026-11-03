@@ -19,11 +19,11 @@ export const rentalRules: RentalRule[] = [
     source_type: "nibash_policy",
     source_url: "/policies/rental-protection",
     source_version: "Public policy 1.0; issued 2026-11-03",
-    effective_date: null,
+    effective_date: "2026-11-03",
     assumptions:
       "New accepted agreements with established continuity. No retrospective certification. Ordinary rent increases require tenant acceptance; recurring charges cannot bypass protection.",
     enforcement: "block",
-    verification_status: "Nibash policy 1.0; effective upon publication, not a blanket statutory prohibition",
+    verification_status: "Nibash policy 1.0; published 2026-11-03, not a blanket statutory prohibition",
   },
   {
     id: "BD-PRCA-10",

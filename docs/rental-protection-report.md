@@ -1,5 +1,7 @@
 # Nibash rental protection implementation report
 
+Release update, 3 November 2026: the implementation below was subsequently merged to production `main`, migrations 018 and 019 were applied after a successful private restore rehearsal, and frontend/API checks passed. See [the production rollout record](rental-production-rollout.md). References below to pending deployment or dependency advisories describe the original implementation stage; the rollout record supersedes them.
+
 Hackathon extension prepared November 3, 2026 for the November 5, 10:00 PM Bangladesh deadline. Original marketplace, contributors’ attribution, search implementation, dynamic areas and AI document screening are preserved. Changes are on `codex/rental-protection`; nothing was deployed or applied to the configured database.
 
 ## A. Existing functionality discovered
