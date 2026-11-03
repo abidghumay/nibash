@@ -128,7 +128,9 @@ export function ListingsPage() {
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
 
-  const [searchMode, setSearchMode] = useState<"ordinary" | "natural">("ordinary");
+  const urlSearchMode = searchParams.get("mode") === "natural" ? "natural" : "ordinary";
+  const [searchMode, setSearchMode] = useState<"ordinary" | "natural">(urlSearchMode);
+  useEffect(() => { setSearchMode(urlSearchMode); }, [urlSearchMode]);
   const [naturalState, setNaturalState] = useState<NaturalSearchState>({ phase: "idle", interpretation: null });
   const naturalMode = searchMode === "natural" && !(isVerifier && verifierView === "pending");
   const manualKey = JSON.stringify([areaName, bedrooms, maxRent, selectedAmenities]);
@@ -159,17 +161,26 @@ export function ListingsPage() {
 
   // Keep URL parameters updated as filters change
   const updateUrlParams = useCallback(
-    (q: string, area: string, beds: number | null, rent: number | null) => {
+    (q: string, area: string, beds: number | null, rent: number | null, mode = searchMode) => {
       const next = new URLSearchParams();
       if (q.trim()) next.set("q", q.trim());
+      if (mode === "natural") next.set("mode", "natural");
       if (area.trim()) next.set("area", area.trim());
       if (beds !== null && !isNaN(beds)) next.set("bedrooms", beds.toString());
       if (rent !== null && !isNaN(rent)) next.set("maxRent", rent.toString());
       if (isVerifier) next.set("view", verifierView);
       setSearchParams(next, { replace: true });
     },
-    [setSearchParams, isVerifier, verifierView]
+    [setSearchParams, isVerifier, verifierView, searchMode]
   );
+
+  const handleSearchModeChange = (mode: "ordinary" | "natural", query = searchTerm) => {
+    if (mode === searchMode && query === searchTerm) return;
+    setSearchMode(mode);
+    setSearchTerm(query);
+    setNaturalState({ phase: "idle", interpretation: null });
+    updateUrlParams(query, areaName, bedrooms, maxRent, mode);
+  };
 
   // Sync state if URL changes externally (e.g. navigation or browser back/forward)
   useEffect(() => {
@@ -455,11 +466,11 @@ export function ListingsPage() {
 
       {!(isVerifier && verifierView === "pending") && (
         <div className="mb-4 flex flex-wrap gap-2" role="group" aria-label="Search mode">
-          <button type="button" aria-pressed={!naturalMode} onClick={() => { setSearchMode("ordinary"); setNaturalState({ phase: "idle", interpretation: null }); }} className={`min-h-11 rounded-lg border px-4 py-2 text-sm ${!naturalMode ? "border-slate-400 bg-slate-800 text-white" : "border-slate-700 text-slate-300"}`}>Ordinary search</button>
-          <button type="button" aria-pressed={naturalMode} onClick={() => setSearchMode("natural")} className={`min-h-11 rounded-lg border px-4 py-2 text-sm ${naturalMode ? "border-slate-400 bg-slate-800 text-white" : "border-slate-700 text-slate-300"}`}>Natural language · বাংলা / English / Banglish</button>
+          <button type="button" aria-pressed={!naturalMode} onClick={() => handleSearchModeChange("ordinary")} className={`min-h-11 rounded-lg border px-4 py-2 text-sm ${!naturalMode ? "border-slate-400 bg-slate-800 text-white" : "border-slate-700 text-slate-300"}`}>Ordinary search</button>
+          <button type="button" aria-pressed={naturalMode} onClick={() => handleSearchModeChange("natural")} className={`min-h-11 rounded-lg border px-4 py-2 text-sm ${naturalMode ? "border-slate-400 bg-slate-800 text-white" : "border-slate-700 text-slate-300"}`}>Natural language · বাংলা / English / Banglish</button>
         </div>
       )}
-      {naturalMode && <NaturalLanguageSearch state={naturalState} onChange={setNaturalState} manualKey={manualKey} amenityNames={allAmenities.map((amenity) => amenity.name)} onOrdinarySearch={(query) => { setSearchMode("ordinary"); setNaturalState({ phase: "idle", interpretation: null }); handleKeywordChange(query); }} />}
+      {naturalMode && <NaturalLanguageSearch initialQuery={searchParams.get("mode") === "natural" ? searchParams.get("q") || "" : ""} state={naturalState} onChange={setNaturalState} manualKey={manualKey} amenityNames={allAmenities.map((amenity) => amenity.name)} onOrdinarySearch={(query) => handleSearchModeChange("ordinary", query)} />}
       {naturalMode && <p className="mb-3 text-sm text-slate-300">Manual filters below intersect with the interpreted requirements.</p>}
       {/* Comprehensive Search & Filter Widget */}
       <form onSubmit={handleSearchSubmit} className="mb-8 flex flex-col gap-3">

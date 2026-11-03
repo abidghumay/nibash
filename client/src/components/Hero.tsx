@@ -87,6 +87,8 @@ export function Hero() {
     const params = new URLSearchParams();
     if (query.trim()) {
       params.set("q", query.trim());
+      params.set("mode", "natural");
+      params.set("view", "approved");
     }
     if (areaName && areaName !== "All Areas") {
       params.set("area", areaName);

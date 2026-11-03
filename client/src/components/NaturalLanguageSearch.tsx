@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { apiClient } from '../api/client';
 import { useAreas } from '../context/AreaContext';
 import type { NaturalSearchState, SearchFilters, SearchInterpretation } from '../utils/naturalLanguageSearch';
@@ -10,7 +10,8 @@ const numberFields = [
   ['bathrooms', 'Bathrooms'], ['floor', 'Floor (0 = ground)'],
 ] as const;
 
-export function NaturalLanguageSearch({ state, onChange, manualKey, amenityNames, onOrdinarySearch }: {
+export function NaturalLanguageSearch({ initialQuery = '', state, onChange, manualKey, amenityNames, onOrdinarySearch }: {
+  initialQuery?: string;
   state: NaturalSearchState;
   onChange: (state: NaturalSearchState) => void;
   manualKey: string;
@@ -18,7 +19,7 @@ export function NaturalLanguageSearch({ state, onChange, manualKey, amenityNames
   onOrdinarySearch: (query: string) => void;
 }) {
   const { areas, loading: areasLoading, error: areasError } = useAreas();
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState(initialQuery);
   const [error, setError] = useState('');
   const requestVersion = useRef(0);
   const errorRef = useRef<HTMLParagraphElement>(null);
@@ -43,8 +44,7 @@ export function NaturalLanguageSearch({ state, onChange, manualKey, amenityNames
     }
   }, [state.phase]);
 
-  const interpret = async (event: React.FormEvent) => {
-    event.preventDefault();
+  const interpret = useCallback(async (query: string) => {
     if (!query.trim()) return;
     const version = ++requestVersion.current;
     pending.current = true;
@@ -61,7 +61,15 @@ export function NaturalLanguageSearch({ state, onChange, manualKey, amenityNames
       setError(err instanceof Error ? err.message : 'Could not interpret your description. Try again or use ordinary search.');
       onChange({ phase: 'error', interpretation: null });
     }
-  };
+  }, [onChange]);
+
+  useEffect(() => {
+    if (!initialQuery.trim()) return;
+    setQuery(initialQuery);
+    // Defer until effects settle; cleanup prevents duplicate requests in StrictMode.
+    const timer = setTimeout(() => { void interpret(initialQuery); }, 0);
+    return () => clearTimeout(timer);
+  }, [initialQuery, interpret]);
 
   const interpretation = state.interpretation;
   const editFilter = (key: keyof SearchFilters, value: SearchFilters[keyof SearchFilters]) => {
@@ -74,7 +82,7 @@ export function NaturalLanguageSearch({ state, onChange, manualKey, amenityNames
 
   return (
     <section className="mb-4 rounded-xl border border-slate-700 bg-[#12151c] p-4 sm:p-5" aria-label="Natural language apartment search">
-      <form onSubmit={interpret} className="space-y-3">
+      <form onSubmit={(event) => { event.preventDefault(); void interpret(query); }} className="space-y-3">
         <label htmlFor="natural-query" className="block text-sm font-medium text-white">Describe your next apartment</label>
         <p id="natural-help" className="text-sm text-slate-400">Use বাংলা, English, or Banglish. Requirements below stay editable; manual filters also apply.</p>
         <textarea id="natural-query" value={query} rows={2} maxLength={600} required aria-describedby="natural-help" placeholder="ধানমন্ডিতে ৩ বেডের বাসা, ৩০ হাজারের মধ্যে, লিফট লাগবে" className={control}
