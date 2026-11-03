@@ -2,6 +2,7 @@ import { Link, useLocation } from "react-router-dom";
 import { ProfileMenu } from "./ProfileMenu";
 import { useAuth } from "../context/AuthContext";
 import { InboxBell } from "./InboxBell";
+import { BuildathonBadge } from "./BuildathonBadge";
 
 export function Navbar() {
   const location = useLocation();
@@ -11,6 +12,7 @@ export function Navbar() {
     <header className="bg-[#090a0c]/90 backdrop-blur-xl w-full h-20 border-b border-white/10 sticky top-0 z-50 transition-all duration-300">
       <div className="flex justify-between items-center px-4 sm:px-6 lg:px-container-padding max-w-[1440px] mx-auto w-full h-full">
         {/* Brand Logo */}
+        <div className="flex items-center shrink-0">
         <Link
           to={user?.is_verifier ? "/verify/dashboard" : "/"}
           className="flex items-center gap-3 cursor-pointer group shrink-0"
@@ -26,6 +28,12 @@ export function Navbar() {
             </span>
           </div>
         </Link>
+        {location.pathname === "/" && !user?.is_verifier && (
+          <div className="hidden xl:block ml-4 pl-4 border-l border-white/15">
+            <BuildathonBadge className="w-[164px]" />
+          </div>
+        )}
+        </div>
 
         {/* Center Desktop Navigation */}
         {!user?.is_verifier && (

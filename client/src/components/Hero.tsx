@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { mockListings } from "../data/mockListings";
 import { useAreas } from "../context/AreaContext";
+import { BuildathonBadge } from "./BuildathonBadge";
 
 export function Hero() {
   const { areas, loading: areasLoading, error: areasError } = useAreas();
@@ -134,6 +135,9 @@ export function Hero() {
       <div className="relative z-10 max-w-[1440px] w-full mx-auto px-container-padding grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
         {/* Left Column: Headline, Description & Glass Search Widget */}
         <div className="lg:col-span-6 flex flex-col gap-8">
+          <div className="xl:hidden self-start">
+            <BuildathonBadge className="w-[188px] sm:w-[212px]" />
+          </div>
           {/* Main Headline */}
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-light tracking-tight text-[#f8f9fa] leading-[1.12]">
             Find a Place That{" "}
