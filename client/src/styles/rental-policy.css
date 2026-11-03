@@ -1,0 +1,141 @@
+.rental-policy {
+  max-width: 76rem;
+  margin-inline: auto;
+  padding: 3rem clamp(1rem, 4vw, 3rem) 5rem;
+  color: #d8e0eb;
+  font-size: 1rem;
+  line-height: 1.85;
+}
+.rental-policy-header {
+  max-width: 52rem;
+  margin-block-end: 3rem;
+}
+.rental-policy-eyebrow {
+  color: #d4b87c;
+  letter-spacing: 0.15em;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+.rental-policy h1 {
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  color: #f8fafc;
+  font-weight: 500;
+  letter-spacing: -0.035em;
+  line-height: 1.15;
+  margin-block: 0.8rem 1.5rem;
+  text-wrap: balance;
+}
+.rental-policy p {
+  margin-block: 0 1.15rem;
+}
+.rental-policy h2 {
+  font-size: 1.3rem;
+  font-weight: 600;
+  line-height: 1.4;
+  color: #f1f5f9;
+  margin-block: 0 1rem;
+  scroll-margin-block-start: 7rem;
+}
+.rental-policy article {
+  min-width: 0;
+  max-width: 47rem;
+}
+.rental-policy article section {
+  margin-block-end: 2.7rem;
+  padding-block-end: 1.5rem;
+  border-block-end: 1px solid #334155;
+}
+.rental-policy-layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2.5rem;
+}
+.rental-policy-contents {
+  align-self: start;
+  border: 1px solid #334155;
+  border-radius: 0.8rem;
+  padding: 1.3rem;
+  background: #12151c;
+}
+.rental-policy-contents h2 {
+  font-size: 1rem;
+}
+.rental-policy-contents ol {
+  padding-inline-start: 1.25rem;
+}
+.rental-policy-contents li {
+  padding-block: 0.3rem;
+}
+.rental-policy a {
+  color: #e7cd99;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+  overflow-wrap: anywhere;
+}
+.rental-policy a:hover {
+  color: #fff0cf;
+}
+.rental-policy-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-block-start: 1.5rem;
+}
+.rental-policy-actions :is(a, button) {
+  min-height: 48px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0.65rem 1rem;
+  border: 1px solid #607188;
+  border-radius: 0.5rem;
+  color: #f1f5f9;
+  background: #1b2330;
+  cursor: pointer;
+  font-size: 0.9rem;
+  text-decoration: none;
+}
+.rental-policy :is(a, button):focus-visible {
+  outline: 3px solid #e7cd99;
+  outline-offset: 4px;
+}
+@media (min-width: 1024px) {
+  .rental-policy-layout {
+    grid-template-columns: 16rem minmax(0, 1fr);
+  }
+  .rental-policy-contents {
+    position: sticky;
+    inset-block-start: 6rem;
+    max-height: calc(100dvh - 7rem);
+    overflow: auto;
+  }
+}
+@media print {
+  body:has(.rental-policy) :is(nav, footer),
+  .rental-policy-actions {
+    display: none;
+  }
+  .rental-policy {
+    max-width: none;
+    padding: 0;
+    color: #111;
+    background: #fff;
+    font-size: 11pt;
+    line-height: 1.6;
+  }
+  .rental-policy :is(h1, h2, a) {
+    color: #111;
+  }
+  .rental-policy-layout {
+    display: block;
+  }
+  .rental-policy article {
+    max-width: none;
+  }
+  .rental-policy h2 {
+    break-after: avoid;
+  }
+  .rental-policy p {
+    orphans: 3;
+    widows: 3;
+  }
+}

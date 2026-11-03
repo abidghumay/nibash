@@ -86,14 +86,9 @@ export function Footer() {
           </span>
           <ul className="flex flex-col gap-2.5 text-sm text-[#94a3b8]">
             <li>
-              <span className="hover:text-white transition-colors cursor-pointer">
-                Terms of Service
-              </span>
-            </li>
-            <li>
-              <span className="hover:text-white transition-colors cursor-pointer">
-                Privacy Policy
-              </span>
+              <Link to="/policies/rental-protection" className="hover:text-white transition-colors underline underline-offset-4">
+                Rental Protection &amp; Records Policy
+              </Link>
             </li>
             <li>
               <span className="text-white/80 flex items-center gap-2 mt-2">

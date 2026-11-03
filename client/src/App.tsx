@@ -29,6 +29,7 @@ import { VerifierDashboardPage } from "./pages/VerifierDashboardPage";
 import { ChangePasswordPage } from "./pages/ChangePasswordPage";
 import { OwnerIncomePage } from "./pages/OwnerIncomePage";
 import { MyTenantsPage } from "./pages/MyTenantsPage";
+import { RentalPolicyPage } from "./pages/RentalPolicyPage";
 import { InboxPage } from "./pages/InboxPage";
 
 function HomePage() {
@@ -87,6 +88,7 @@ export default function App() {
           <Route path="/about-us" element={<Navigate to="/about" replace />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/policies/rental-protection" element={<RentalPolicyPage />} />
           <Route path="/verify" element={<VerifyPortalPage />} />
           <Route path="/inbox" element={<ProtectedRoute><InboxPage /></ProtectedRoute>} />
           <Route

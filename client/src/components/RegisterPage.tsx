@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { API_BASE_URL } from "../api/client";
 
@@ -44,7 +44,7 @@ export function RegisterPage() {
       return;
     }
     if (!agreeTerms) {
-      setError("Please agree to the Nibash terms and conditions.");
+      setError("Please read and agree to the Nibash Rental Protection & Records Policy.");
       return;
     }
 
@@ -162,7 +162,7 @@ export function RegisterPage() {
 
               {/* Error Alerts */}
               {error && (
-                <div className="mb-6 p-4 bg-red-950/70 border border-red-500/40 rounded-xl flex items-center gap-3 text-red-200 shadow-sm">
+                <div role="alert" className="mb-6 p-4 bg-red-950/70 border border-red-500/40 rounded-xl flex items-center gap-3 text-red-200 shadow-sm">
                   <span className="material-symbols-outlined text-red-400 text-xl shrink-0">
                     error
                   </span>
@@ -311,19 +311,21 @@ export function RegisterPage() {
                   <input
                     id="reg-terms"
                     type="checkbox"
+                    required
+                    aria-describedby="reg-policy-help"
                     checked={agreeTerms}
                     onChange={(e) => setAgreeTerms(e.target.checked)}
                     className="w-4 h-4 rounded border-white/20 text-[#090a0c] bg-[#090a0c] accent-white cursor-pointer mt-0.5"
                   />
                   <label
                     htmlFor="reg-terms"
-                    className="text-xs text-[#94a3b8] cursor-pointer select-none leading-relaxed"
+                    className="text-sm text-[#cbd5e1] cursor-pointer leading-relaxed"
                   >
-                    I certify that the information provided is accurate and agree to the{" "}
-                    <span className="text-white underline">Nibash Terms of Service</span> and{" "}
-                    <span className="text-white underline">Privacy Policy</span>.
+                    I confirm that my registration details are accurate and I have read and agree to the{" "}
+                    <Link to="/policies/rental-protection" target="_blank" rel="noopener noreferrer" className="text-white underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-4">Rental Protection &amp; Records Policy<span className="sr-only"> (opens in a new tab)</span></Link>.
                   </label>
                 </div>
+                <p id="reg-policy-help" className="text-sm text-slate-300">The policy opens in a new tab so your form stays here. Accepting a rental agreement or rent revision is a separate step.</p>
 
                 {/* Submit Button */}
                 <button

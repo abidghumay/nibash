@@ -836,7 +836,7 @@ export function RentalManagementPanel({
                       rel="noreferrer"
                       className="rental-button mt-3"
                     >
-                      Official source ↗
+                      {rule.source_type === "nibash_policy" ? "Read Nibash policy" : "Official source"} ↗
                     </a>
                   )}
                 </div>
