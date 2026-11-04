@@ -4,6 +4,7 @@ import { apiClient } from "../api/client";
 import { useAuth } from "../context/AuthContext";
 import { RentalManagementPanel } from "../components/RentalManagementPanel";
 import { ConditionReportPanel } from "../components/ConditionReportPanel";
+import { MoveOutInspectionPanel } from "../components/MoveOutInspectionPanel";
 import { ReviewModal, type ReviewData } from "../components/ReviewModal";
 import { DeleteConfirmModal } from "../components/DeleteConfirmModal";
 
@@ -349,6 +350,7 @@ export function ContractDetailPage() {
 
       {id && user && <RentalManagementPanel contractId={id} userId={user.id} onPaymentsChanged={refreshPayments} />}
       {id && user && <ConditionReportPanel contractId={id} userId={user.id} />}
+      {id && user && <MoveOutInspectionPanel contractId={id} userId={user.id} propertyName={contract.listing_title} onCompleted={fetchContractAndPayments} />}
 
       {/* Main 12-Column Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">

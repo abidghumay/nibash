@@ -1,0 +1,424 @@
+{
+  "recorded_at": "2026-11-04T15:16:30.763Z",
+  "sample_scope": "Six synthetic illustrative pairs; qualitative feasibility only",
+  "results": [
+    {
+      "id": "01-identical",
+      "expected": "No meaningful visible difference; empty findings are valid.",
+      "evidence_kind": "live Gemini response on synthetic images",
+      "result": {
+        "comparisonStatus": "compared",
+        "summary": "No meaningful property condition changes are visible between the baseline and move-out photographs.",
+        "findings": [],
+        "limitations": []
+      },
+      "model": "gemini-3.5-flash-lite",
+      "runtime_ms": 19474,
+      "usage": {
+        "promptTokenCount": 2489,
+        "candidatesTokenCount": 48,
+        "totalTokenCount": 2537,
+        "promptTokensDetails": [
+          {
+            "modality": "IMAGE",
+            "tokenCount": 2128
+          },
+          {
+            "modality": "TEXT",
+            "tokenCount": 361
+          }
+        ],
+        "serviceTier": "standard"
+      },
+      "raw_response": {
+        "candidates": [
+          {
+            "content": {
+              "parts": [
+                {
+                  "text": "{\n  \"comparisonStatus\": \"compared\",\n  \"summary\": \"No meaningful property condition changes are visible between the baseline and move-out photographs.\",\n  \"findings\": [],\n  \"limitations\": []\n}",
+                  "thoughtSignature": "EmAKXgFpFH0TKPos5HYpkLR7y6Ht9JrbZmtKMMCVBAy+gPnIIqcjq6q9fwZmJQxbsCtrsspCQ+ZytMnAON/ZtXEIUt3QuniCG14EtzLVNzG6EdsLtKXYBcjReno35RwYvGM="
+                }
+              ],
+              "role": "model"
+            },
+            "finishReason": "STOP",
+            "index": 0
+          }
+        ],
+        "usageMetadata": {
+          "promptTokenCount": 2489,
+          "candidatesTokenCount": 48,
+          "totalTokenCount": 2537,
+          "promptTokensDetails": [
+            {
+              "modality": "IMAGE",
+              "tokenCount": 2128
+            },
+            {
+              "modality": "TEXT",
+              "tokenCount": 361
+            }
+          ],
+          "serviceTier": "standard"
+        },
+        "modelVersion": "gemini-3.5-flash-lite",
+        "responseId": "v0vraoGiA5XWg8UPg6qswQE"
+      },
+      "api": "v1beta generateContent",
+      "prompt_version": "condition-comparison-text-v3",
+      "review": {
+        "meaningful_change": "pending qualitative review",
+        "false_positives": "pending qualitative review",
+        "misses": "pending qualitative review",
+        "abstention": "pending qualitative review",
+        "description_clarity": "pending qualitative review",
+        "bounding_boxes": "Not used: Phase 1 localization was unreliable"
+      }
+    },
+    {
+      "id": "02-lighting",
+      "expected": "Exposure changed; do not describe lighting alone as surface damage.",
+      "evidence_kind": "live Gemini response on synthetic images",
+      "result": {
+        "comparisonStatus": "compared",
+        "summary": "No meaningful property condition changes observed between baseline and move-out photographs. Any visible differences are limited to overall lighting, color tint, and exposure.",
+        "findings": [],
+        "limitations": [
+          "Overall lighting and color temperature vary between baseline photo 1 and move-out photo 2."
+        ]
+      },
+      "model": "gemini-3.5-flash-lite",
+      "runtime_ms": 18931,
+      "usage": {
+        "promptTokenCount": 2489,
+        "candidatesTokenCount": 85,
+        "totalTokenCount": 2574,
+        "promptTokensDetails": [
+          {
+            "modality": "IMAGE",
+            "tokenCount": 2128
+          },
+          {
+            "modality": "TEXT",
+            "tokenCount": 361
+          }
+        ],
+        "serviceTier": "standard"
+      },
+      "raw_response": {
+        "candidates": [
+          {
+            "content": {
+              "parts": [
+                {
+                  "text": "{\n  \"comparisonStatus\": \"compared\",\n  \"summary\": \"No meaningful property condition changes observed between baseline and move-out photographs. Any visible differences are limited to overall lighting, color tint, and exposure.\",\n  \"findings\": [],\n  \"limitations\": [\n    \"Overall lighting and color temperature vary between baseline photo 1 and move-out photo 2.\"\n  ]\n}",
+                  "thoughtSignature": "EmAKXgFpFH0TQXZ5ev440E2xkBbozLR7P5zuRGHRjCC6rfIuQD6bN02Jj6f7Ftq0I+Pg070ir+bcbl5BN1HseXlXKNOuQmwy+MtYIP0LuAW+msbb4sXUIoV9fzzncwmu6NU="
+                }
+              ],
+              "role": "model"
+            },
+            "finishReason": "STOP",
+            "index": 0
+          }
+        ],
+        "usageMetadata": {
+          "promptTokenCount": 2489,
+          "candidatesTokenCount": 85,
+          "totalTokenCount": 2574,
+          "promptTokensDetails": [
+            {
+              "modality": "IMAGE",
+              "tokenCount": 2128
+            },
+            {
+              "modality": "TEXT",
+              "tokenCount": 361
+            }
+          ],
+          "serviceTier": "standard"
+        },
+        "modelVersion": "gemini-3.5-flash-lite",
+        "responseId": "0kvrauZ43rKO4w-fjJvACw"
+      },
+      "api": "v1beta generateContent",
+      "prompt_version": "condition-comparison-text-v3",
+      "review": {
+        "meaningful_change": "pending qualitative review",
+        "false_positives": "pending qualitative review",
+        "misses": "pending qualitative review",
+        "abstention": "pending qualitative review",
+        "description_clarity": "pending qualitative review",
+        "bounding_boxes": "Not used: Phase 1 localization was unreliable"
+      }
+    },
+    {
+      "id": "03-object-moved",
+      "expected": "The chair moved right. A scene-position difference is acceptable; do not infer property damage.",
+      "evidence_kind": "live attempt; no valid model comparison",
+      "status": "blocked",
+      "code": "gemini_network_or_timeout",
+      "model": "gemini-3.5-flash-lite",
+      "runtime_ms": 45042
+    },
+    {
+      "id": "04-wall-mark",
+      "expected": "Possible new brown zigzag mark near the center of the back wall; cause and responsibility unknown.",
+      "evidence_kind": "live Gemini response on synthetic images",
+      "result": {
+        "comparisonStatus": "compared",
+        "summary": "Comparing baseline and move-out photographs shows a new visible mark on the wall.",
+        "findings": [
+          {
+            "roomId": 1,
+            "baselinePhotoId": 1,
+            "moveOutPhotoId": 2,
+            "category": "clear_visible_difference",
+            "description": "A dark irregular line or mark is visible on the wall.",
+            "locationHint": "On the back wall between the window and the table.",
+            "visualEvidence": "The baseline photo shows a blank wall space in this area, whereas the move-out photo shows a dark zigzag mark.",
+            "id": "4c01d303ebd03864b2f3e624",
+            "reviewRequired": true
+          }
+        ],
+        "limitations": []
+      },
+      "model": "gemini-3.5-flash-lite",
+      "runtime_ms": 22006,
+      "usage": {
+        "promptTokenCount": 2489,
+        "candidatesTokenCount": 164,
+        "totalTokenCount": 2653,
+        "promptTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 361
+          },
+          {
+            "modality": "IMAGE",
+            "tokenCount": 2128
+          }
+        ],
+        "serviceTier": "standard"
+      },
+      "raw_response": {
+        "candidates": [
+          {
+            "content": {
+              "parts": [
+                {
+                  "text": "{\n  \"comparisonStatus\": \"compared\",\n  \"summary\": \"Comparing baseline and move-out photographs shows a new visible mark on the wall.\",\n  \"findings\": [\n    {\n      \"roomId\": 1,\n      \"baselinePhotoId\": 1,\n      \"moveOutPhotoId\": 2,\n      \"category\": \"clear_visible_difference\",\n      \"description\": \"A dark irregular line or mark is visible on the wall.\",\n      \"locationHint\": \"On the back wall between the window and the table.\",\n      \"visualEvidence\": \"The baseline photo shows a blank wall space in this area, whereas the move-out photo shows a dark zigzag mark.\"\n    }\n  ],\n  \"limitations\": []\n}",
+                  "thoughtSignature": "EmAKXgFpFH0T9EZCyzPn4KbtUDYfGORlLZJ0/Ul1S13QdxV9xIgD36q6/vr7oRrgjXbvFXFsxulE4RXLpzwkCQtFfBYpmgzxUa+m/Zjmh8BTuxeBQfc54u3zPgKab80++p0="
+                }
+              ],
+              "role": "model"
+            },
+            "finishReason": "STOP",
+            "index": 0
+          }
+        ],
+        "usageMetadata": {
+          "promptTokenCount": 2489,
+          "candidatesTokenCount": 164,
+          "totalTokenCount": 2653,
+          "promptTokensDetails": [
+            {
+              "modality": "TEXT",
+              "tokenCount": 361
+            },
+            {
+              "modality": "IMAGE",
+              "tokenCount": 2128
+            }
+          ],
+          "serviceTier": "standard"
+        },
+        "modelVersion": "gemini-3.5-flash-lite",
+        "responseId": "EkzrarDLEti63LUP8tukqAw"
+      },
+      "api": "v1beta generateContent",
+      "prompt_version": "condition-comparison-text-v3",
+      "review": {
+        "meaningful_change": "pending qualitative review",
+        "false_positives": "pending qualitative review",
+        "misses": "pending qualitative review",
+        "abstention": "pending qualitative review",
+        "description_clarity": "pending qualitative review",
+        "bounding_boxes": "Not used: Phase 1 localization was unreliable"
+      }
+    },
+    {
+      "id": "05-obstruction",
+      "expected": "Most relevant surfaces are obscured. Explain comparison limitations and abstain from definite hidden-surface findings.",
+      "evidence_kind": "live Gemini response on synthetic images",
+      "result": {
+        "comparisonStatus": "limited",
+        "summary": "Comparison is limited because a large dark object obscures most of the scene in the move-out photograph.",
+        "findings": [],
+        "limitations": [
+          "Move-out photo 2 is largely obscured by an object blocking the view of the wall, window, chair, and table seen in baseline photo 1."
+        ]
+      },
+      "model": "gemini-3.5-flash-lite",
+      "runtime_ms": 13367,
+      "usage": {
+        "promptTokenCount": 2489,
+        "candidatesTokenCount": 89,
+        "totalTokenCount": 2578,
+        "promptTokensDetails": [
+          {
+            "modality": "IMAGE",
+            "tokenCount": 2128
+          },
+          {
+            "modality": "TEXT",
+            "tokenCount": 361
+          }
+        ],
+        "serviceTier": "standard"
+      },
+      "raw_response": {
+        "candidates": [
+          {
+            "content": {
+              "parts": [
+                {
+                  "text": "{\n  \"comparisonStatus\": \"limited\",\n  \"summary\": \"Comparison is limited because a large dark object obscures most of the scene in the move-out photograph.\",\n  \"findings\": [],\n  \"limitations\": [\n    \"Move-out photo 2 is largely obscured by an object blocking the view of the wall, window, chair, and table seen in baseline photo 1.\"\n  ]\n}",
+                  "thoughtSignature": "EmAKXgFpFH0TgFSJse9NtaQNcmSdmUu+S6jpnzxVBZHWlBHgw9MOXNzNighB8HYyeg0nDZAgtI+jWNHEGCRknM0OVbNUmWaZDB+W0r4yQG2gQMIe+4dhrQzG7jOANO8kLRY="
+                }
+              ],
+              "role": "model"
+            },
+            "finishReason": "STOP",
+            "index": 0
+          }
+        ],
+        "usageMetadata": {
+          "promptTokenCount": 2489,
+          "candidatesTokenCount": 89,
+          "totalTokenCount": 2578,
+          "promptTokensDetails": [
+            {
+              "modality": "IMAGE",
+              "tokenCount": 2128
+            },
+            {
+              "modality": "TEXT",
+              "tokenCount": 361
+            }
+          ],
+          "serviceTier": "standard"
+        },
+        "modelVersion": "gemini-3.5-flash-lite",
+        "responseId": "KEzravXjDpKx694PyamKaQ"
+      },
+      "api": "v1beta generateContent",
+      "prompt_version": "condition-comparison-text-v3",
+      "review": {
+        "meaningful_change": "pending qualitative review",
+        "false_positives": "pending qualitative review",
+        "misses": "pending qualitative review",
+        "abstention": "pending qualitative review",
+        "description_clarity": "pending qualitative review",
+        "bounding_boxes": "Not used: Phase 1 localization was unreliable"
+      }
+    },
+    {
+      "id": "06-multiple",
+      "expected": "Separate reviewable observations: central brown wall mark, upper-right wall line, brown floor patch.",
+      "evidence_kind": "live Gemini response on synthetic images",
+      "result": {
+        "comparisonStatus": "compared",
+        "summary": "Comparison shows new marks or features on the wall and a spot on the floor.",
+        "findings": [
+          {
+            "roomId": 1,
+            "baselinePhotoId": 1,
+            "moveOutPhotoId": 2,
+            "category": "clear_visible_difference",
+            "description": "Two dark irregular markings visible on the upper wall surface above and to the right of the chair and table.",
+            "locationHint": "Upper wall surface between window and table",
+            "visualEvidence": "Dark jagged lines present in move-out photo 2 that are absent in baseline photo 1.",
+            "id": "59f7c71ef8cf0d5eb5e628fa",
+            "reviewRequired": true
+          },
+          {
+            "roomId": 1,
+            "baselinePhotoId": 1,
+            "moveOutPhotoId": 2,
+            "category": "clear_visible_difference",
+            "description": "A dark oval-shaped spot on the floor surface.",
+            "locationHint": "Floor area in front of the chair to the left",
+            "visualEvidence": "Dark oval mark on the brown floor in photo 2 not visible in photo 1.",
+            "id": "ee82ac2cd742fff8742c07c1",
+            "reviewRequired": true
+          }
+        ],
+        "limitations": []
+      },
+      "model": "gemini-3.5-flash-lite",
+      "runtime_ms": 24815,
+      "usage": {
+        "promptTokenCount": 2489,
+        "candidatesTokenCount": 273,
+        "totalTokenCount": 2762,
+        "promptTokensDetails": [
+          {
+            "modality": "IMAGE",
+            "tokenCount": 2128
+          },
+          {
+            "modality": "TEXT",
+            "tokenCount": 361
+          }
+        ],
+        "serviceTier": "standard"
+      },
+      "raw_response": {
+        "candidates": [
+          {
+            "content": {
+              "parts": [
+                {
+                  "text": "{\n  \"comparisonStatus\": \"compared\",\n  \"summary\": \"Comparison shows new marks or features on the wall and a spot on the floor.\",\n  \"findings\": [\n    {\n      \"roomId\": 1,\n      \"baselinePhotoId\": 1,\n      \"moveOutPhotoId\": 2,\n      \"category\": \"clear_visible_difference\",\n      \"description\": \"Two dark irregular markings visible on the upper wall surface above and to the right of the chair and table.\",\n      \"locationHint\": \"Upper wall surface between window and table\",\n      \"visualEvidence\": \"Dark jagged lines present in move-out photo 2 that are absent in baseline photo 1.\"\n    },\n    {\n      \"roomId\": 1,\n      \"baselinePhotoId\": 1,\n      \"moveOutPhotoId\": 2,\n      \"category\": \"clear_visible_difference\",\n      \"description\": \"A dark oval-shaped spot on the floor surface.\",\n      \"locationHint\": \"Floor area in front of the chair to the left\",\n      \"visualEvidence\": \"Dark oval mark on the brown floor in photo 2 not visible in photo 1.\"\n    }\n  ],\n  \"limitations\": []\n}",
+                  "thoughtSignature": "EmAKXgFpFH0TKL8SZqf9j5VT/JfmUgmJPlbqFsldq2i9TCdrqYV01w3N6CqonXzr8brmqXvyKuJrQvCliVNUx1xctM4rEIyJ80ymoHz/3KRjqTVsU70SRpaDsa14A5lSv7Q="
+                }
+              ],
+              "role": "model"
+            },
+            "finishReason": "STOP",
+            "index": 0
+          }
+        ],
+        "usageMetadata": {
+          "promptTokenCount": 2489,
+          "candidatesTokenCount": 273,
+          "totalTokenCount": 2762,
+          "promptTokensDetails": [
+            {
+              "modality": "IMAGE",
+              "tokenCount": 2128
+            },
+            {
+              "modality": "TEXT",
+              "tokenCount": 361
+            }
+          ],
+          "serviceTier": "standard"
+        },
+        "modelVersion": "gemini-3.5-flash-lite",
+        "responseId": "NUzraoq2I62K694PsLiq2Qc"
+      },
+      "api": "v1beta generateContent",
+      "prompt_version": "condition-comparison-text-v3",
+      "review": {
+        "meaningful_change": "pending qualitative review",
+        "false_positives": "pending qualitative review",
+        "misses": "pending qualitative review",
+        "abstention": "pending qualitative review",
+        "description_clarity": "pending qualitative review",
+        "bounding_boxes": "Not used: Phase 1 localization was unreliable"
+      }
+    }
+  ]
+}

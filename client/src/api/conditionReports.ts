@@ -5,7 +5,7 @@ export interface ConditionPhoto {
 }
 export interface ConditionEvent {
  id:number;actor_id:number;action:string;version:number;created_at:string;
- details:{hash?:string;granted?:boolean;photo_id?:number;notes?:string;previous_notes?:string;snapshot?:{
+ details:{hash?:string;granted?:boolean;no_identity_documents?:boolean;photo_id?:number;notes?:string;previous_notes?:string;snapshot?:{
   rooms:{id:number;name:string}[];photos:ConditionPhoto[];
  }};
 }
@@ -15,7 +15,7 @@ export interface ConditionReport {
  owner_id:number;tenant_id:number;rooms:{id:number;name:string;display_order:number}[];
  photos:ConditionPhoto[];archived_photos:ConditionPhoto[];events:ConditionEvent[];confirmations:ConditionEvent[];ai_consents:ConditionEvent[];
 }
-export interface ConditionResponse {report:ConditionReport|null;eligible:boolean;ai_analysis_enabled:false}
+export interface ConditionResponse {report:ConditionReport|null;eligible:boolean;ai_analysis_enabled:boolean}
 export const conditionEndpoint=(contractId:string)=>`/contracts/${encodeURIComponent(contractId)}/condition-report`;
 const photoAccess=new Map<string,{until:number;request:Promise<{url:string;expires_in:number}>}>();
 export async function conditionPhotoUrl(contractId:string,photoId:number,refresh=false) {

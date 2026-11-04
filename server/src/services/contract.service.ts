@@ -140,6 +140,11 @@ export async function signContract(id:string,userId:number) {
   const client=await pool.connect();
   try {
     await client.query('BEGIN');
+    const listing=await client.query(`SELECT l.id FROM contracts c JOIN listings l ON l.id=c.listing_id
+      WHERE c.id=$1 AND c.tenant_id=$2 FOR UPDATE OF l`,[id,userId]);
+    if(!listing.rows.length)throw new AppError(403,'Not authorized for this contract');
+    await client.query(`SELECT root.id FROM contracts c JOIN contracts root ON root.id=coalesce(c.root_contract_id,c.id)
+      WHERE c.id=$1 FOR UPDATE OF root`,[id]);
     const found=await client.query('SELECT tenant_id,status FROM contracts WHERE id=$1 FOR UPDATE',[id]);
     if (!found.rows.length || found.rows[0].tenant_id!==userId) throw new AppError(403,'Not authorized for this contract');
     if(found.rows[0].status==='signed') { await client.query('COMMIT'); return; }

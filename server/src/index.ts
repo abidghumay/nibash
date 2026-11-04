@@ -3,6 +3,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import "./cron/jobs.js";
 import { pool } from "./db/pool.js";
+import { startConditionWorker } from "./services/conditionAiJobs.service.js";
 import authRoutes from "./routes/auth.route.js";
 import listingRoutes from "./routes/listing.route.js";
 import applicationRoutes from "./routes/application.route.js";
@@ -67,6 +68,7 @@ app.get("/health", async (_req, res) => {
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   startDocumentWorker();
+  startConditionWorker();
   startRentalDocumentWorker();
   startSandboxPaymentWorker();
   void generateInboxReminders().catch(err => console.error("Inbox reminder catch-up failed", err));

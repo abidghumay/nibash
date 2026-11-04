@@ -1,0 +1,18 @@
+{
+  "recorded_at": "2026-11-04T19:47:33.770Z",
+  "scope": "Local synthetic demo resumed with final source; read-only, no new inference",
+  "checks": [
+    {
+      "role": "owner",
+      "completed": true,
+      "confirmed_baseline_preserved": true,
+      "live_finding_preserved": true
+    },
+    {
+      "role": "tenant",
+      "completed": true,
+      "confirmed_baseline_preserved": true,
+      "live_finding_preserved": true
+    }
+  ]
+}

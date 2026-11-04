@@ -20,6 +20,7 @@ test("condition UI labels missing evidence, cancels selection, and binds confirm
  globalThis.fetch=(async(input:any,options?:RequestInit)=>{
    const url=String(input),body=options?.body?JSON.parse(String(options.body)):undefined;
    calls.push({url,body});
+   if(url.endsWith("/ai-consent")){report={...report,ai_consents:[{id:99,actor_id:1,action:"ai_consent",version:4,created_at:base.recorded_at,details:{granted:body.granted,no_identity_documents:body.no_identity_documents,hash:body.hash}}]};return Response.json({report});}
    if(url.endsWith("/confirm")){report={...base,confirmations:[{actor_id:1}]};return Response.json({report});}
    if(options?.method==="POST"){report={...base,status:"draft",integrity_hash:null};return Response.json({report});}
    return Response.json({report,eligible:true,ai_analysis_enabled:false});
@@ -58,7 +59,16 @@ test("condition UI labels missing evidence, cancels selection, and binds confirm
  assert.deepEqual(sent.body,{version:4,hash:"a".repeat(64)});
  assert.match(dom.window.document.body.textContent!,/Landlord confirmed/);
  assert.equal(dom.window.document.querySelectorAll('[data-ai-consent]:checked').length,0,"AI consent must not be preselected");
- assert.match(dom.window.document.body.textContent!,/AI analysis is disabled/);
+ assert.match(dom.window.document.body.textContent!,/Google Gemini/);
+ const baselineConsent=dom.window.document.querySelector<HTMLInputElement>('[data-ai-consent]')!;
+ assert.equal(baselineConsent.disabled,true,"external processing permission requires a no-identity-document attestation");
+ assert.equal(dom.window.document.querySelector<HTMLInputElement>('[data-ai-evidence-safe]')!.checked,false);
+ await act(async()=>dom.window.document.querySelector<HTMLInputElement>('[data-ai-evidence-safe]')!.click());
+ assert.equal(baselineConsent.disabled,false);
+ await act(async()=>baselineConsent.click());
+ assert.deepEqual(calls.find(x=>x.url.endsWith("/ai-consent"))!.body,{version:4,hash:"a".repeat(64),granted:true,no_identity_documents:true});
+ assert.equal(dom.window.document.querySelector<HTMLInputElement>('[data-ai-consent]')!.checked,true);
+ assert.equal(dom.window.document.querySelector<HTMLInputElement>('[data-ai-consent]')!.disabled,false,"a granted permission remains withdrawable");
  // A newly fetched version must clear the local acknowledgment.
  report={...base,version:5,integrity_hash:"b".repeat(64)};
  await act(async()=>button("Reload latest report").click());

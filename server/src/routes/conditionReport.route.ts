@@ -72,7 +72,7 @@ router.post("/confirm",asyncHandler(async(req,res)=>{
   const input=parse(snapshot,req.body);res.json(await service.confirm(actor(req),id(req),input.version,input.hash));
 }));
 router.post("/ai-consent",asyncHandler(async(req,res)=>{
-  const input=parse(snapshot.extend({granted:z.boolean()}).strict(),req.body);
-  res.json(await service.consent(actor(req),id(req),input.version,input.hash,input.granted));
+  const input=parse(snapshot.extend({granted:z.boolean(),no_identity_documents:z.boolean().optional()}).strict(),req.body);
+  res.json(await service.consent(actor(req),id(req),input.version,input.hash,input.granted,input.no_identity_documents));
 }));
 export default router;

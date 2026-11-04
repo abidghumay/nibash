@@ -1,0 +1,33 @@
+{
+  "recorded_at": "2026-11-04T15:33:23.572Z",
+  "database": "Fresh synthetic PostgreSQL17, loopback:55436; no production data",
+  "provider": "Explicit test doubles only",
+  "results": [
+    {
+      "case": "Simultaneous duplicate landlord approvals complete exactly once",
+      "passed": true
+    },
+    {
+      "case": "Evidence edit versus approval has exactly one winner and no stale approval",
+      "passed": true
+    },
+    {
+      "case": "SKIP LOCKED single claim, expired lease recovery and old-worker write fence",
+      "passed": true
+    },
+    {
+      "case": "Withdrawn consent prevents a claimed worker publishing its result",
+      "passed": true
+    },
+    {
+      "case": "Concurrent tenant vacancy and landlord approval complete through root lock",
+      "passed": true
+    },
+    {
+      "case": "Renewal proposal versus final approval observes real listing wait, no lock inversion and fresh continuing-renewal rejection",
+      "passed": true,
+      "actual_lock_wait_observed": true
+    }
+  ],
+  "passed": 6
+}

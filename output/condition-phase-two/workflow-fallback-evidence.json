@@ -1,0 +1,22 @@
+{
+  "recorded_on": "2026-11-04",
+  "evidence_kind": "Actual local database integration tests with explicit provider/storage test doubles; not live model evaluation",
+  "command": "node --import tsx --test --test-concurrency=1 src/services/conditionAiJobs.test.ts src/services/moveOutInspections.integration.test.ts",
+  "working_directory": "server",
+  "result": { "tests": 12, "passed": 12, "failed": 0, "exit_code": 0 },
+  "cases": [
+    {
+      "id": "07-no-baseline",
+      "test": "no baseline permits honest manual documentation only",
+      "observed": "A signed tenancy without a baseline creates rooms and photos; analyze submission remains awaiting_inspection, analysis_source manual, explicit baseline blocker. No unsupported before/after result is produced.",
+      "live_gemini": false
+    },
+    {
+      "id": "08-model-unavailable",
+      "test": "condition jobs recover leases, fence old workers, retry boundedly and respect consent",
+      "observed": "An injected evaluator throws gemini_http_503 on three actual durable worker attempts. The job becomes failed after the bound and the inspection returns to awaiting_inspection for manual review.",
+      "live_gemini": false,
+      "simulated_component": "Provider unavailable error is a deliberate test double, not an observed Gemini outage"
+    }
+  ]
+}

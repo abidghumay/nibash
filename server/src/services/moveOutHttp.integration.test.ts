@@ -1,0 +1,57 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import {readFile} from "node:fs/promises";
+import {resolve} from "node:path";
+import express from "express";
+import jwt from "jsonwebtoken";
+import sharp from "sharp";
+import {pool} from "../db/pool.js";
+import router from "../routes/contract.route.js";
+import {rentalDatabase} from "./testing/rentalFixtures.js";
+
+test("move-out HTTP authorizes before buffering, protects private evidence, and completes a manual inspection",async t=>{
+  const db=await rentalDatabase();t.after(()=>db.close());
+  for(const name of ["021_condition_reports.sql","022_move_out_inspections.sql","023_condition_analysis_jobs.sql"])await db.exec(await readFile(resolve(__dirname,"../../../db/migrations",name),"utf8"));
+  const oldQuery=pool.query,oldConnect=pool.connect,oldFetch=globalThis.fetch;
+  const query=async(sql:string,params?:any[])=>db.query(sql,params);pool.query=query as any;pool.connect=(async()=>({query,release(){}})) as any;
+  let storageCalls=0;
+  globalThis.fetch=(async(input:any,init?:RequestInit)=>{
+    const url=String(input);if(url.startsWith("https://storage.example/")){storageCalls++;
+      if(url.includes("/bucket/"))return Response.json({public:false});
+      if(url.includes("/object/sign/"))return Response.json({signedURL:url.split("/storage/v1")[1]+"?token=synthetic"});
+      return Response.json({});}
+    return oldFetch(input,init);
+  }) as typeof fetch;
+  process.env.SUPABASE_URL="https://storage.example";process.env.SUPABASE_SERVICE_ROLE_KEY="synthetic";process.env.JWT_SECRET="move-out-http-synthetic";
+  t.after(()=>{pool.query=oldQuery;pool.connect=oldConnect;globalThis.fetch=oldFetch;});
+  const app=express();app.use(express.json());app.use("/api/contracts",router);const server=app.listen(0);t.after(()=>server.close());await new Promise<void>(r=>server.once("listening",r));
+  const address=server.address();assert.ok(address&&typeof address!=="string");const base="http://127.0.0.1:"+address.port+"/api/contracts/1/move-out-inspection";
+  const headers=(user:number)=>({Authorization:"Bearer "+jwt.sign({id:user,email:"synthetic@example.test"},process.env.JWT_SECRET!)});
+  const request=(user:number,path:string,method="GET",body?:any)=>fetch(base+path,{method,headers:{...headers(user),"Content-Type":"application/json"},body:body===undefined?undefined:JSON.stringify(body)});
+  assert.equal((await fetch(base)).status,401);assert.equal((await request(3,"")).status,403);assert.equal((await request(3,"","POST",{})).status,403);
+  let result:any=await(await request(2,"","POST",{})).json();assert.equal(result.inspection.status,"awaiting_photos");assert.equal(result.baseline,null);
+  assert.equal((await request(2,"/rooms","POST",{version:1,name:"Bedroom",unexpected:true})).status,400);
+  result=await(await request(2,"/rooms","POST",{version:1,name:"Bedroom"})).json();const room=result.inspection.rooms[0].id;
+  const form=(bytes:Uint8Array,mime="image/png",extra=false)=>{const data=new FormData();data.set("version","2");data.set("room_id",String(room));data.set("photo",new Blob([bytes as any],{type:mime}),"evidence.png");if(extra)data.set("storage_path","../../secret");return data;};
+  const upload=(user:number,data:FormData)=>fetch(base+"/photos",{method:"POST",headers:headers(user),body:data});
+  assert.equal((await upload(3,form(new Uint8Array(8*1024*1024+1)))).status,403);
+  assert.equal((await upload(2,form(new Uint8Array([1,2])))).status,400);
+  assert.equal((await upload(2,form(new Uint8Array(8*1024*1024+1)))).status,413);assert.equal(storageCalls,0);
+  const image=await sharp({create:{width:128,height:128,channels:3,background:"#ddd"}}).png().toBuffer();
+  assert.equal((await upload(2,form(image,"image/png",true))).status,400);assert.equal(storageCalls,0);
+  const added=await upload(2,form(image));assert.equal(added.status,201);result=await added.json();const photo=result.inspection.photos[0].id;
+  assert.ok(!JSON.stringify(result).includes("storage_path"));const before=storageCalls;
+  assert.equal((await request(3,"/photos/"+photo+"/url")).status,403);assert.equal(storageCalls,before);
+  assert.equal((await request(2,"/photos/"+photo+"/url?path=../other")).status,400);
+  const signed=await request(1,"/photos/"+photo+"/url");assert.equal(signed.status,200);assert.equal(signed.headers.get("cache-control"),"private, no-store");
+  assert.equal((await request(1,"/photos/"+photo+"/remove","POST",{version:3})).status,403);
+  assert.equal((await request(2,"/submit","POST",{version:3,analyze:false,consent:false})).status,200);
+  assert.equal((await request(2,"/approve","POST",{version:3,vacated:true,accepted:true,move_out_date:"2026-01-01"})).status,403);
+  assert.equal((await request(1,"/approve","POST",{version:3,vacated:false,accepted:true,move_out_date:"2026-01-01"})).status,400);
+  assert.equal((await request(1,"/approve","POST",{version:3,vacated:true,accepted:true,move_out_date:"2026-01-01"})).status,200);
+  assert.equal((await request(1,"/vacancy","POST",{version:3,move_out_date:"2026-01-01"})).status,403);
+  assert.equal((await request(2,"/vacancy","POST",{version:3,move_out_date:"2026-01-02"})).status,409);
+  result=await(await request(2,"/vacancy","POST",{version:3,move_out_date:"2026-01-01"})).json();assert.equal(result.inspection.status,"completed");
+  assert.equal((await request(1,"/approve","POST",{version:3,vacated:true,accepted:true,move_out_date:"2026-01-01"})).status,200);
+  assert.equal((await request(2,"/photos/"+photo+"/remove","POST",{version:3})).status,409);
+});

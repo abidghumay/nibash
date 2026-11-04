@@ -1,0 +1,73 @@
+{
+  "recorded_before_inference": "2026-11-04T15:09:49.565Z",
+  "source": "Project-authored Phase 1 synthetic SVG fixtures, inspected against their generation source; no personal data",
+  "protocol": "Production Phase 2 text-only prompt/schema; no bounding boxes or accuracy percentage. Qualitative small feasibility sample.",
+  "baseline": {
+    "file": "../condition-vision/baseline.png",
+    "sha256": "c2ed5dc97b7931b9dc2bcee231d8d28d0eb4c413259bd55b9f9c654b153a65ab"
+  },
+  "cases": [
+    {
+      "id": "01-identical",
+      "expected": "No meaningful visible difference; empty findings are valid.",
+      "changes": [],
+      "abstention": false,
+      "sha256": "c2ed5dc97b7931b9dc2bcee231d8d28d0eb4c413259bd55b9f9c654b153a65ab"
+    },
+    {
+      "id": "02-lighting",
+      "expected": "Exposure changed; do not describe lighting alone as surface damage.",
+      "changes": [],
+      "abstention": false,
+      "sha256": "0b7a920cbe25ac513cfa2b04a094ad6c49eb71119b6fc7218edfb03fa4f2703d"
+    },
+    {
+      "id": "03-object-moved",
+      "expected": "The chair moved right. A scene-position difference is acceptable; do not infer property damage.",
+      "changes": [
+        "chair position"
+      ],
+      "abstention": false,
+      "sha256": "2b7c6375a6468374513c53bfe1d1b4d09778b80bedab81fe16e8b4349ee6fea8"
+    },
+    {
+      "id": "04-wall-mark",
+      "expected": "Possible new brown zigzag mark near the center of the back wall; cause and responsibility unknown.",
+      "changes": [
+        "central back-wall mark"
+      ],
+      "abstention": false,
+      "sha256": "27e3f026065593f6a49df5964ca36f58bb0b57eb1d5200585c484339276e46f9"
+    },
+    {
+      "id": "05-obstruction",
+      "expected": "Most relevant surfaces are obscured. Explain comparison limitations and abstain from definite hidden-surface findings.",
+      "changes": [],
+      "abstention": true,
+      "sha256": "80f40ba135217e6c04ec784a31b592c8d3cb10b823ca8235387acc8afd608bed"
+    },
+    {
+      "id": "06-multiple",
+      "expected": "Separate reviewable observations: central brown wall mark, upper-right wall line, brown floor patch.",
+      "changes": [
+        "central back-wall mark",
+        "upper-right wall line",
+        "floor patch"
+      ],
+      "abstention": false,
+      "sha256": "49c57cce42c4d3e79db7bb44ebb5fd33cbd165974741e415bcc98aea282069ff"
+    }
+  ],
+  "manual_fallback_cases": [
+    {
+      "id": "07-no-baseline",
+      "expected": "Manual documentation, no Gemini request or before/after claim",
+      "evidence_kind": "Backend integration test, not a live model sample"
+    },
+    {
+      "id": "08-model-unavailable",
+      "expected": "Bounded failure leaves manual human review usable",
+      "evidence_kind": "Injected unavailable provider in backend integration test, not a live provider outage"
+    }
+  ]
+}

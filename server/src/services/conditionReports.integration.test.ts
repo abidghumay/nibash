@@ -108,7 +108,8 @@ test("condition reports preserve private, versioned evidence using PostgreSQL", 
   await t.test("AI consent is optional, snapshot-bound and revocable without unlocking", async () => {
     report = (await service.submit(1, 1, report.version)).report;
     const version = report.version, hash = report.integrity_hash;
-    await service.consent(1, 1, version, hash, true);
+    await assert.rejects(()=>service.consent(1,1,version,hash,true),/identity documents/);
+    await service.consent(1, 1, version, hash, true,true);
     report = (await service.confirm(1, 1, version, hash)).report;
     report = (await service.confirm(2, 1, version, hash)).report;
     assert.equal(report.status, "confirmed");

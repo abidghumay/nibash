@@ -156,6 +156,7 @@ export function MyTenantsPage() {
                       {tenant.tenant_name}
                       <span>{tenant.listing_title}</span>
                     </Link>
+                    <Link to={`/contracts/${tenant.contract_id}#move-out-inspection`} className="rental-tenant-link">Move-out inspection</Link>
                     <small className="rental-muted">
                       Floor {tenant.unit_floor} · {tenant.area_name},{" "}
                       {tenant.city}

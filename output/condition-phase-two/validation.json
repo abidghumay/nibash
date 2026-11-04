@@ -1,0 +1,66 @@
+{
+  "verified_on_bangladesh_date": "2026-11-05",
+  "scope": "Local implementation, isolated database/API tests and synthetic demonstrations; no production deployment or migration",
+  "server_tests": {
+    "command": "npm test",
+    "directory": "server",
+    "exit_code": 0,
+    "tests": 202,
+    "passed": 202,
+    "failed": 0,
+    "log": "server-tests-final.log",
+    "database": "Isolated PGlite PostgreSQL fixtures",
+    "provider": "Explicit test doubles; not live Gemini evaluation"
+  },
+  "client_tests": {
+    "command": "npm test",
+    "directory": "client",
+    "exit_code": 0,
+    "tests": 32,
+    "passed": 32,
+    "failed": 0,
+    "log": "client-tests-final.log"
+  },
+  "builds": [
+    {"directory": "server", "command": "npm run build", "exit_code": 0, "log": "server-build-final.log"},
+    {"directory": "client", "command": "npm run build -- --emptyOutDir false", "exit_code": 0, "log": "client-build-final.log"},
+    {"directory": "client", "command": "VITE_API_URL=/api npm run build -- --outDir dist/condition-demo", "exit_code": 0, "log": "demo-client-build-final.log"}
+  ],
+  "build_warning": "Existing client JavaScript bundle exceeds 500 kB",
+  "real_postgresql": {
+    "engine": "PostgreSQL 17",
+    "scope": "Fresh dedicated loopback cluster with synthetic records and separate actual pg.Pool sessions",
+    "passed_checks": 6,
+    "evidence": "postgres-concurrency.json",
+    "actual_lock_wait_observed": true,
+    "provider": "Explicit test doubles",
+    "cluster_stopped_after_tests": true
+  },
+  "fixture_http_demo": {"passed_checks": 12, "evidence": "demo-http-results.json", "inference": "Clearly labelled fixture fallback; no live model inference"},
+  "live_demo": {
+    "evidence": "live-demo-evidence.json",
+    "model": "gemini-3.5-flash-lite",
+    "prompt_version": "condition-comparison-text-v3",
+    "final_job_runtime_ms": 23367,
+    "final_job_total_tokens": 2678,
+    "attempts": 2,
+    "completed_browser_journey": true,
+    "inputs": "Project-authored synthetic illustrations",
+    "simulated_components": ["PGlite database", "private local disk storage", "synthetic accounts", "physical inspection/vacancy declarations"],
+    "resumed_final_source_read_check": "demo-resume-smoke.json"
+  },
+  "live_evaluation": {
+    "v2": "results.json",
+    "v2_review": "review.md",
+    "v3": "../condition-phase-two-v3/results.json",
+    "v3_review": "../condition-phase-two-v3/review.md",
+    "v3_attempts": 6,
+    "v3_valid_responses": 5,
+    "v3_timeouts": 1,
+    "accuracy_score": null,
+    "bounding_boxes": "Disabled after Phase 1 feasibility decision"
+  },
+  "browser_layout": {"desktop_width": 1365, "mobile_width": 390, "horizontal_overflow_observed": false, "screenshots": "../condition-phase2-ui/", "physical_mobile_device_tested": false},
+  "production_changed": false,
+  "production_gaps": "See docs/condition-inspection-phase-two.md, Remaining risks and production work"
+}

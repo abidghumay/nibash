@@ -1,0 +1,54 @@
+{
+  "recorded_at": "2026-11-04T15:24:46.812Z",
+  "mode": "explicit fixture fallback; no live model inference",
+  "checks": [
+    {
+      "name": "real login and locked baseline",
+      "status": "passed"
+    },
+    {
+      "name": "unauthenticated and unrelated-party rejection",
+      "status": "passed"
+    },
+    {
+      "name": "actual multipart upload and pair matching",
+      "status": "passed"
+    },
+    {
+      "name": "short-lived signed private image access and tamper rejection",
+      "status": "passed"
+    },
+    {
+      "name": "durable worker persists clearly labelled fixture comparison",
+      "status": "passed"
+    },
+    {
+      "name": "approval before required review and tenant approval rejected",
+      "status": "passed"
+    },
+    {
+      "name": "landlord approval waits for independent tenant vacancy",
+      "status": "passed"
+    },
+    {
+      "name": "tenant vacancy completes controlled closure once",
+      "status": "passed"
+    },
+    {
+      "name": "both parties see completion and baseline remains unchanged",
+      "status": "passed"
+    },
+    {
+      "name": "unpaid invoice remains unchanged by approval and vacancy",
+      "status": "passed"
+    },
+    {
+      "name": "completion notifications visible to both parties",
+      "status": "passed"
+    },
+    {
+      "name": "no baseline is labelled manual and can complete without AI",
+      "status": "passed"
+    }
+  ]
+}

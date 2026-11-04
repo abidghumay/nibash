@@ -1,0 +1,8 @@
+.move-out-inspection .move-out-pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;background:var(--cr-border)}
+.move-out-inspection .move-out-evidence{border:1px solid var(--cr-border);border-radius:12px;overflow:hidden;margin-block:16px}
+.move-out-inspection figure{margin:0;min-width:0}.move-out-inspection figcaption{overflow-wrap:anywhere;font-size:.9rem;margin-bottom:12px}
+.move-out-inspection .move-out-evidence>button{margin:16px}.move-out-inspection .move-out-finding{padding:20px;border-top:1px solid var(--cr-border)}
+.move-out-inspection h4{font-size:1.05rem;font-weight:600;line-height:1.5}.move-out-inspection .move-out-analysis,.move-out-inspection .move-out-observations{padding:20px;margin-block:24px;border:1px solid var(--cr-border);border-radius:12px}
+.move-out-inspection .move-out-analysis>button{margin:8px 12px 8px 0}.move-out-inspection .condition-help{overflow-wrap:anywhere}.move-out-inspection p{margin-block:10px}
+@media(max-width:520px){.move-out-inspection .move-out-pair{grid-template-columns:1fr}.move-out-inspection .move-out-finding,.move-out-inspection .move-out-analysis,.move-out-inspection .move-out-observations{padding:14px}.move-out-inspection .move-out-analysis>button{width:100%;margin-inline:0}}
+.move-out-inspection{scroll-margin-top:110px}

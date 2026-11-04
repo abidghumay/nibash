@@ -45,7 +45,7 @@ export function ConditionReportPanel({contractId,userId}:{contractId:string;user
  const endpoint=conditionEndpoint(contractId);
  const [data,setData]=useState<ConditionResponse|null>(null),[error,setError]=useState(""),[busy,setBusy]=useState(false),[message,setMessage]=useState("");
  const [roomName,setRoomName]=useState(""),[roomId,setRoomId]=useState(""),[file,setFile]=useState<File|null>(null),[notes,setNotes]=useState("");
- const [reviewed,setReviewed]=useState(false);
+ const [reviewed,setReviewed]=useState(false),[identityFree,setIdentityFree]=useState(false);
  const fileInput=useRef<HTMLInputElement>(null);
  const reload=useCallback(async()=>{
   try{const value=await apiClient.get<ConditionResponse>(endpoint);setData(value);setError("");}
@@ -57,7 +57,7 @@ export function ConditionReportPanel({contractId,userId}:{contractId:string;user
   return()=>{active=false;};
  },[endpoint]);
  const report=data?.report;
- useEffect(()=>setReviewed(false),[report?.version,report?.integrity_hash,contractId]);
+ useEffect(()=>{setReviewed(false);setIdentityFree(false);},[report?.version,report?.integrity_hash,contractId]);
  async function action(work:()=>Promise<{report:ConditionReport|null}>,success:string) {
   setBusy(true);setError("");setMessage("");
   try {const value=await work();setData(current=>({...current!,report:value.report}));setMessage(success);return true;}
@@ -79,7 +79,8 @@ export function ConditionReportPanel({contractId,userId}:{contractId:string;user
   <h2>Property condition record</h2>{error?<><p role="alert">{error}</p><button type="button" className="rental-button" onClick={reload}>Reload latest report</button></>:<p role="status">Loading private condition record…</p>}</section>;
  const editable=!!report&&report.status!=="confirmed"&&data.eligible;
  const myConfirmation=report?.confirmations.some(e=>e.actor_id===userId);
- const myConsent=report?.ai_consents.find(e=>e.actor_id===userId)?.details.granted===true;
+ const consentRecord=report?.ai_consents.find(e=>e.actor_id===userId);
+ const myConsent=consentRecord?.details.granted===true&&consentRecord.details.no_identity_documents===true;
  return <section className="rental-management rental-card condition-report" aria-label="Property condition record">
   <div className="condition-heading"><div><p className="condition-eyebrow">Shared property evidence</p><h2>{report?.record_kind==="move_in"?"Move-in condition report":"Current condition record"}</h2></div>
    <button type="button" className="rental-button" disabled={busy} onClick={reload}>Reload latest report</button></div>
@@ -133,12 +134,13 @@ export function ConditionReportPanel({contractId,userId}:{contractId:string;user
       {event.details.snapshot&&<SubmittedSnapshot event={event} contractId={contractId}/>}
      </li>)}</ol>
     </details>
-    <details className="condition-privacy"><summary>Privacy and optional future AI analysis</summary>
+    <details className="condition-privacy"><summary>Privacy and optional AI comparison permission</summary>
      <p>Photos are stored privately for both contract parties. Download links expire after two minutes. Do not share these links. Storage does not authorize model training or marketing.</p>
-     <p>AI analysis is disabled in Phase 1. Future analysis would send permitted photos and room notes to Google Gemini to suggest possible visible changes. AI may make mistakes; a person must inspect. Consent alone does not enable processing. Provider safeguards and a paid data-processing configuration must be reviewed first.</p>
-     {report.integrity_hash&&<label className="condition-check"><input type="checkbox" data-ai-consent checked={myConsent} disabled={busy}
-      onChange={event=>{const granted=event.target.checked;void action(()=>apiClient.post(endpoint+"/ai-consent",{version:report.version,hash:report.integrity_hash,granted}),granted?"Optional consent recorded for this snapshot. AI remains disabled.":"AI consent withdrawn. No analysis will be started.");}}/>
-      I permit future visible-change analysis of this submitted snapshot after the stated safeguards are satisfied. Optional; I can withdraw this permission.</label>}
+     <p>Optional move-out comparison sends permitted photos and room notes from this frozen baseline to Google Gemini to suggest visible changes. AI may make mistakes; a person must inspect. Both parties must separately permit baseline and move-out evidence processing. The operator must enable the reviewed provider configuration before analysis can run. This permission does not authorize training, marketing or future data reuse.</p>
+     {report.integrity_hash&&<><label className="condition-check"><input type="checkbox" data-ai-evidence-safe checked={identityFree||myConsent} disabled={busy||myConsent} onChange={event=>setIdentityFree(event.target.checked)}/>
+      I checked this baseline: its photographs and notes contain no identity documents or unrelated sensitive personal details.</label><label className="condition-check"><input type="checkbox" data-ai-consent checked={myConsent} disabled={busy||(!myConsent&&!identityFree)}
+      onChange={event=>{const granted=event.target.checked;void action(()=>apiClient.post(endpoint+"/ai-consent",{version:report.version,hash:report.integrity_hash,granted,...(granted?{no_identity_documents:true}:{})}),granted?"Optional comparison permission recorded for this exact baseline. Move-out permissions and the operator gate are still required.":"Baseline AI permission withdrawn for future processing.");}}/>
+      I permit external visible-change analysis of this submitted baseline for move-out comparison. Optional; I can withdraw this permission.</label></>}
      <p>Retention policy: review records for deletion 12 months after confirmed physical closure, subject to a documented dispute hold; abandoned drafts after 90 days. The retention job and backup expiry require deployment setup. Contact the platform operator for a deletion or access request.</p>
     </details>
    </>}

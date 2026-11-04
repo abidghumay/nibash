@@ -33,4 +33,5 @@ graphify-out/cache/
 server/.payment-sandbox-data/
 server/.env.payment-sandbox
 server/.payment-sandbox-data-v2/
+server/.condition-inspection-demo-data*/
 !server/.env.payment-sandbox.example

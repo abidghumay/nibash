@@ -191,6 +191,13 @@ export async function closeRental(
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
+    await client.query(`SELECT l.id FROM contracts c JOIN listings l ON l.id=c.listing_id
+      WHERE c.id=$1 AND (c.tenant_id=$2 OR l.owner_id=$2) FOR UPDATE OF l`,[id,user]);
+    // Serialize with condition evidence and renewed-tenancy operations on the same root.
+    await client.query(`SELECT root.id FROM contracts c
+      JOIN contracts root ON root.id=coalesce(c.root_contract_id,c.id)
+      JOIN listings l ON l.id=c.listing_id
+      WHERE c.id=$1 AND (c.tenant_id=$2 OR l.owner_id=$2) FOR UPDATE OF root`,[id,user]);
     const result = await client.query(
       `SELECT c.*,l.owner_id FROM contracts c JOIN listings l ON l.id=c.listing_id
       WHERE c.id=$1 AND (c.tenant_id=$2 OR l.owner_id=$2) FOR UPDATE OF c,l`,
@@ -201,6 +208,10 @@ export async function closeRental(
     const c = result.rows[0];
     if (c.status !== "signed")
       throw new AppError(400, "Only the current signed contract can be closed");
+    // Older installations/tests can still use legacy closure before migration 022.
+    if ((await client.query("SELECT to_regclass('public.move_out_inspections') AS relation")).rows[0].relation &&
+      (await client.query("SELECT id FROM move_out_inspections WHERE contract_id=$1",[id])).rows.length)
+      throw new AppError(409,"Complete the move-out inspection and both parties' physical vacancy confirmations in the inspection page");
     const date = (
       await client.query(
         "SELECT (now() AT TIME ZONE 'Asia/Dhaka')::date::text AS today",

@@ -752,6 +752,7 @@ export function RentalManagementPanel({
         {section === "Move-out" && (
           <>
             <h3>Move-out, inspection & settlement</h3>
+            <a href="#move-out-inspection" className="rental-button">Open move-out condition inspection</a>
             <p className="rental-muted">
               Agreement expiry: {dhakaDate(c.end_date)}. Occupancy:{" "}
               {c.occupancy_state}. Expiry does not establish vacancy. Both

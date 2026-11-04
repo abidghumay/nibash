@@ -3,6 +3,7 @@ import { pool } from "../db/pool.js";
 import { AppError } from "../errors/AppError.js";
 import { normalizeConditionImage } from "./conditionImages.js";
 import { conditionStorage, type ConditionStorage } from "./conditionStorage.service.js";
+import { conditionAnalysisEnabled } from "./moveOutVision.js";
 
 interface Queryable { query(sql:string,params?:any[]):Promise<{rows:any[]}> }
 interface Database extends Queryable { connect():Promise<Queryable & {release():void}> }
@@ -92,7 +93,7 @@ export class ConditionReports {
   async get(user:number,contract:number) {
     // Keep reads on a single transaction/root lock so version, metadata and events cannot tear across an edit.
     return this.transaction(user,contract,async(db,c)=>({report:await this.load(db,c.id),eligible:c.eligible,
-      ai_analysis_enabled:false,missing_baseline_message:"No move-in evidence exists. Manual documentation is available; no before/after comparison is claimed."}));
+      ai_analysis_enabled:conditionAnalysisEnabled(),missing_baseline_message:"No move-in evidence exists. Manual documentation is available; no before/after comparison is claimed."}));
   }
   async create(user:number,contract:number) {
     return this.transaction(user,contract,async(db,c)=>{
@@ -198,12 +199,13 @@ export class ConditionReports {
       return {report:await this.load(db,c.id)};
     });
   }
-  async consent(user:number,contract:number,version:number,hash:string,granted:boolean) {
+  async consent(user:number,contract:number,version:number,hash:string,granted:boolean,noIdentityDocuments=false) {
     return this.transaction(user,contract,async(db,c)=>{
       const r=await this.locked(db,c,version,false);
       if(r.status==="draft" || r.integrity_hash!==hash) throw new AppError(409,"AI consent must reference the exact submitted snapshot");
-      await this.event(db,r,user,"ai_consent",{hash,granted,disclosure_version:"condition-ai-v1",
-        scope:"Possible visible changes only; no liability decisions. No training or marketing reuse. Production analysis is disabled pending provider safeguards."});
+      if(granted&&!noIdentityDocuments) throw new AppError(400,"Confirm the property photographs contain no identity documents before external processing");
+      await this.event(db,r,user,"ai_consent",{hash,granted,no_identity_documents:granted&&noIdentityDocuments,disclosure_version:"condition-ai-v2",
+        scope:"External Gemini processing of the exact confirmed baseline, only with both parties' permission and operator safeguards. No separate training or marketing reuse permission is granted. No liability or financial decisions."});
       return {report:await this.load(db,c.id)};
     });
   }
