@@ -19,8 +19,12 @@ import rentalRoutes from './routes/rental.route.js';
 import { startRentalDocumentWorker } from './services/rentalDocuments.service.js';
 import { generateInboxReminders } from "./services/notification.service.js";
 import { startDocumentWorker } from "./services/documentAiJobs.service.js";
+import sandboxPaymentRoutes from './routes/sandboxPayment.route.js';
+import { startSandboxPaymentWorker } from './services/sandboxPayments.service.js';
+import { sandboxConfig } from './services/shurjoPaySandbox.js';
 
 dotenv.config();
+sandboxConfig(); // Fail closed before listening if sandbox is enabled in production.
 
 const app = express();
 app.use(cors());
@@ -41,6 +45,7 @@ app.use("/api/owners/me/income", incomeRoutes);
 app.use("/api/areas", areaRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use('/api/rental',rentalRoutes);
+app.use('/api/payment-sandbox',sandboxPaymentRoutes);
 
 // root route
 app.get("/", (_req, res) => {
@@ -63,6 +68,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   startDocumentWorker();
   startRentalDocumentWorker();
+  startSandboxPaymentWorker();
   void generateInboxReminders().catch(err => console.error("Inbox reminder catch-up failed", err));
   console.log(`Server running on port ${PORT}`);
 });

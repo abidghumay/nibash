@@ -87,6 +87,7 @@ export async function renderRentalPdf(row: RentalDocument): Promise<Buffer> {
   );
   pdf.moveDown();
   const s = row.snapshot;
+  if (s.test_payment) line('TEST PAYMENT — no real money transferred; no landlord payout.', 14, '#9c381b');
   const fields: Array<[string, unknown]> = [
     ["Contract reference", s.contract_id],
     ["Landlord", s.owner_name],
@@ -102,11 +103,11 @@ export async function renderRentalPdf(row: RentalDocument): Promise<Buffer> {
       ["Confirmation event", s.event_id],
       ["Category", s.category],
       ["Billing period", s.billing_month ?? "Not period-specific"],
-      ["Amount actually received (BDT)", s.amount_received],
+      [s.test_payment ? "TEST amount (BDT)" : "Amount actually received (BDT)", s.amount_received],
       ["Outstanding at this event (BDT)", s.outstanding_balance],
       ["Method", s.payment_method],
       ["Confirmed at", s.confirmed_at],
-      ["Authenticated issuer", s.issuer_name],
+      ["Authenticated issuer", s.provider === 'simulated' ? 'Nibash development simulator' : s.issuer_name],
       ["Confirmation detail", s.confirmation],
     );
   else
@@ -158,7 +159,7 @@ export async function renderRentalPdf(row: RentalDocument): Promise<Buffer> {
         pdf
           .font(/[\u0980-\u09ff]/.test(field.value) ? "bangla" : "text")
           .fontSize(10);
-        return title + pdf.heightOfString(field.value, { width, lineGap: 3 }) + 17;
+        return title + pdf.heightOfString(field.value, { width, lineGap: 3 }) + (s.test_payment ? 12 : 17);
       }),
     );
     if (pdf.y + height > 710) {
@@ -197,7 +198,8 @@ export async function renderRentalPdf(row: RentalDocument): Promise<Buffer> {
     );
   if (row.kind === "acknowledgment")
     line(
-      "This electronic acknowledgment records an authenticated landlord confirmation. Statutory signed receipt requirements require separate review.",
+      s.provider === 'simulated' ? "Simulated payment — no real money transferred. This development demonstration is not an official gateway verification or a receipt for real rent."
+        : s.test_payment ? "TEST acknowledgment of independent sandbox verification. This is not a receipt for real rent or a landlord settlement." : "This electronic acknowledgment records an authenticated landlord confirmation. Statutory signed receipt requirements require separate review.",
       9,
     );
   line(

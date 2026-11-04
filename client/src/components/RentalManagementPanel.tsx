@@ -10,6 +10,7 @@ import {
 } from "../api/rentals";
 import type { RentalDetails } from "../api/rentals";
 import "../styles/rental-management.css";
+import { SandboxPayment } from './SandboxPayment';
 const sections = [
   "Agreements",
   "Payments",
@@ -28,9 +29,11 @@ const documentName: Record<string, string> = {
 export function RentalManagementPanel({
   contractId,
   userId,
+  onPaymentsChanged,
 }: {
   contractId: string;
   userId: number;
+  onPaymentsChanged?: () => void;
 }) {
   const [data, setData] = useState<RentalDetails | null>(null);
   const [section, setSection] = useState("Agreements");
@@ -65,6 +68,7 @@ export function RentalManagementPanel({
       await work();
       setMessage(success);
       setRefresh((v) => v + 1);
+      onPaymentsChanged?.();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Request failed");
     } finally {
@@ -359,9 +363,8 @@ export function RentalManagementPanel({
           <>
             <h3>Invoices & actual receipts</h3>
             <p className="rental-muted">
-              Cash marked paid remains unconfirmed until the landlord
-              acknowledges receipt. Transfer methods are recorded declarations;
-              Nibash has no independent payment-provider verification here.
+              Cash marked paid remains unconfirmed until the landlord acknowledges receipt.
+              Manual transfer methods are recorded declarations. TEST sandbox and simulated payments are labeled separately and transfer no real money.
             </p>
             {!data.payments.length && (
               <p className="rental-muted">
@@ -383,10 +386,14 @@ export function RentalManagementPanel({
                   <strong>{bdt(p.outstanding_balance)} outstanding</strong>
                 </div>
                 <p className="rental-muted">
-                  Amount due {bdt(p.amount)} · Confirmed cash / transfer{" "}
+                  Amount due {bdt(p.amount)} · {data.payment_sandbox ? 'Confirmed TEST / manual records' : 'Confirmed cash / transfer'}{" "}
                   {bdt(p.confirmed_amount)} · Advance credit applied{" "}
                   {bdt(p.advance_credit)}
                 </p>
+                {data.payment_sandbox && <SandboxPayment paymentId={p.id} isTenant={isTenant}
+                  provider={data.payment_sandbox_provider}
+                  payable={['pending','overdue'].includes(p.status) && !data.events.some(e=>e.payment_id===p.id && e.status==='pending')}
+                  onChanged={()=>{setRefresh(v=>v+1);onPaymentsChanged?.();}} />}
                 {isTenant &&
                   ["pending", "overdue"].includes(p.status) &&
                   !data.events.some(

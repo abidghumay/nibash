@@ -1,0 +1,91 @@
+{
+  "license": "Project-authored synthetic SVG fixtures; no personal data.",
+  "cases": [
+    {
+      "id": "01-identical",
+      "options": {},
+      "expected": "Comparable; no differences. No boxes.",
+      "regions": [],
+      "abstain": false
+    },
+    {
+      "id": "02-lighting",
+      "options": {
+        "light": true
+      },
+      "expected": "No surface change; exposure alone must not be reported as damage.",
+      "regions": [],
+      "abstain": false
+    },
+    {
+      "id": "03-object-moved",
+      "options": {
+        "moved": true
+      },
+      "expected": "Chair moved right. No surface damage inferred.",
+      "regions": [
+        [
+          525,
+          650,
+          800,
+          775
+        ]
+      ],
+      "abstain": false
+    },
+    {
+      "id": "04-wall-mark",
+      "options": {
+        "mark": true
+      },
+      "expected": "New visible brown mark on back wall near center; cause unknown.",
+      "regions": [
+        [
+          280,
+          570,
+          370,
+          630
+        ]
+      ],
+      "abstain": false
+    },
+    {
+      "id": "05-obstruction",
+      "options": {
+        "obscured": true
+      },
+      "expected": "Abstain: most room surfaces occluded. Do not invent hidden changes.",
+      "regions": [],
+      "abstain": true
+    },
+    {
+      "id": "06-multiple",
+      "options": {
+        "mark": true,
+        "multiple": true
+      },
+      "expected": "Three visible surface changes: brown central wall mark, upper-right wall line, brown floor patch.",
+      "regions": [
+        [
+          280,
+          570,
+          370,
+          630
+        ],
+        [
+          290,
+          780,
+          450,
+          830
+        ],
+        [
+          830,
+          265,
+          905,
+          390
+        ]
+      ],
+      "abstain": false
+    }
+  ]
+}

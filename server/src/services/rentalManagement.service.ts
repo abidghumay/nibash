@@ -5,6 +5,7 @@ import { dmpSchema } from "../schemas/rental.schema.js";
 import { getContractById } from "./contract.service.js";
 import { getPaymentsForContract } from "./payment.service.js";
 import { rentalRules } from "./rentalRules.js";
+import { sandboxConfig } from './shurjoPaySandbox.js';
 
 export async function authorizeRental(
   user: number,
@@ -97,6 +98,8 @@ export async function rentalDetails(user: number, id: string) {
   );
   return {
     contract,
+    payment_sandbox: sandboxConfig().enabled && (await pool.query('SELECT 1 FROM sandbox_contracts WHERE contract_id=$1',[id])).rows.length > 0,
+    payment_sandbox_provider: sandboxConfig().enabled ? sandboxConfig().provider : undefined,
     payments,
     revisions: revisions.rows,
     documents: documents.rows,

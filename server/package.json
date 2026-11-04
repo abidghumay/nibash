@@ -7,7 +7,8 @@
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
-    "test": "node scripts/test-local.cjs"
+    "test": "node scripts/test-local.cjs",
+    "demo:payments": "tsx src/paymentSandboxDemo.ts"
   },
   "keywords": [],
   "author": "",
@@ -22,6 +23,7 @@
     "node-cron": "^4.6.0",
     "pdfkit": "^0.20.2",
     "pg": "^8.22.0",
+    "sharp": "^0.35.5",
     "zod": "^4.4.3"
   },
   "devDependencies": {

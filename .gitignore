@@ -29,3 +29,8 @@ Thumbs.db
 
 # Graphify
 graphify-out/cache/
+# Isolated synthetic payment demo database
+server/.payment-sandbox-data/
+server/.env.payment-sandbox
+server/.payment-sandbox-data-v2/
+!server/.env.payment-sandbox.example

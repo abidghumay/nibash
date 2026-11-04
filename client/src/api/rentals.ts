@@ -84,6 +84,8 @@ export interface RentalRevision {
   status: string;
 }
 export interface RentalDetails {
+  payment_sandbox?: boolean;
+  payment_sandbox_provider?: string;
   contract: RentalContract;
   payments: RentalPayment[];
   events: RentalEvent[];

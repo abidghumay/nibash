@@ -1,0 +1,566 @@
+{
+  "recorded_at": "2026-11-04T10:21:40.970Z",
+  "results": [
+    {
+      "id": "01-identical",
+      "input_pair": [
+        "baseline.png",
+        "01-identical.png"
+      ],
+      "expected": "Comparable; no differences. No boxes.",
+      "expected_regions": [],
+      "expected_abstention": false,
+      "model": "gemini-3.5-flash-lite",
+      "runtime_ms": 3203,
+      "response": {
+        "comparable": true,
+        "reason": "The images are identical and fully comparable with no visible differences.",
+        "differences": []
+      },
+      "raw_response": {
+        "candidates": [
+          {
+            "content": {
+              "parts": [
+                {
+                  "text": "{\n  \"comparable\": true,\n  \"reason\": \"The images are identical and fully comparable with no visible differences.\",\n  \"differences\": []\n}",
+                  "thoughtSignature": "EmAKXgFpFH0TzuUfUtQ9pru2FQFtTb91lSmETOc1SSzlveAnGQ3fz4ARm/7DA7nxORdsn4ZYHtYbM2K57lVC27mAWnHrjv+nRYxprFvzaX/RZR7pL03tEjRkcHPJ3jByyJw="
+                }
+              ],
+              "role": "model"
+            },
+            "finishReason": "STOP",
+            "index": 0
+          }
+        ],
+        "usageMetadata": {
+          "promptTokenCount": 2379,
+          "candidatesTokenCount": 36,
+          "totalTokenCount": 2415,
+          "promptTokensDetails": [
+            {
+              "modality": "IMAGE",
+              "tokenCount": 2128
+            },
+            {
+              "modality": "TEXT",
+              "tokenCount": 251
+            }
+          ],
+          "serviceTier": "standard"
+        },
+        "modelVersion": "gemini-3.5-flash-lite",
+        "responseId": "FgfrapmaC5XWg8UP1s2q4Qk"
+      },
+      "usage": {
+        "promptTokenCount": 2379,
+        "candidatesTokenCount": 36,
+        "totalTokenCount": 2415,
+        "promptTokensDetails": [
+          {
+            "modality": "IMAGE",
+            "tokenCount": 2128
+          },
+          {
+            "modality": "TEXT",
+            "tokenCount": 251
+          }
+        ],
+        "serviceTier": "standard"
+      },
+      "api": "v1beta generateContent",
+      "review": {
+        "meaningful_differences": "Correctly returned no differences for identical images.",
+        "false_positives": "None observed.",
+        "misses": "None observable.",
+        "localization": "No box returned, as expected.",
+        "abstention": "Not required; comparable=true."
+      },
+      "usable_regions_for_diagnostic_review": false
+    },
+    {
+      "id": "02-lighting",
+      "input_pair": [
+        "baseline.png",
+        "02-lighting.png"
+      ],
+      "expected": "No surface change; exposure alone must not be reported as damage.",
+      "expected_regions": [],
+      "expected_abstention": false,
+      "model": "gemini-3.5-flash-lite",
+      "runtime_ms": 7615,
+      "response": {
+        "comparable": true,
+        "reason": "The images are comparable from the same viewpoint, showing only lighting and color saturation differences with no changes in object positions or surfaces.",
+        "differences": []
+      },
+      "raw_response": {
+        "candidates": [
+          {
+            "content": {
+              "parts": [
+                {
+                  "text": "{\n  \"comparable\": true,\n  \"reason\": \"The images are comparable from the same viewpoint, showing only lighting and color saturation differences with no changes in object positions or surfaces.\",\n  \"differences\": []\n}",
+                  "thoughtSignature": "EmAKXgFpFH0T5Eoh3jaqVLy6UcTGiUd50oUumoDP34pUCvG/xx0qt56ER6T8jmIPJWQtCviy3rBRN6As4at1q6ClT22O/NtG4IdLjS3kAvWIr9fz9SrELvG5Nvp6Y3skJ80="
+                }
+              ],
+              "role": "model"
+            },
+            "finishReason": "STOP",
+            "index": 0
+          }
+        ],
+        "usageMetadata": {
+          "promptTokenCount": 2379,
+          "candidatesTokenCount": 49,
+          "totalTokenCount": 2428,
+          "promptTokensDetails": [
+            {
+              "modality": "IMAGE",
+              "tokenCount": 2128
+            },
+            {
+              "modality": "TEXT",
+              "tokenCount": 251
+            }
+          ],
+          "serviceTier": "standard"
+        },
+        "modelVersion": "gemini-3.5-flash-lite",
+        "responseId": "GAfratv1OJvojuMPl6vziAg"
+      },
+      "usage": {
+        "promptTokenCount": 2379,
+        "candidatesTokenCount": 49,
+        "totalTokenCount": 2428,
+        "promptTokensDetails": [
+          {
+            "modality": "IMAGE",
+            "tokenCount": 2128
+          },
+          {
+            "modality": "TEXT",
+            "tokenCount": 251
+          }
+        ],
+        "serviceTier": "standard"
+      },
+      "api": "v1beta generateContent",
+      "review": {
+        "meaningful_differences": "Correctly treated exposure/color shift as lighting only.",
+        "false_positives": "None observed.",
+        "misses": "None observable.",
+        "localization": "No box returned, as expected.",
+        "abstention": "Not required; comparable=true."
+      },
+      "usable_regions_for_diagnostic_review": false
+    },
+    {
+      "id": "03-object-moved",
+      "input_pair": [
+        "baseline.png",
+        "03-object-moved.png"
+      ],
+      "expected": "Chair moved right. No surface damage inferred.",
+      "expected_regions": [
+        [
+          525,
+          650,
+          800,
+          775
+        ]
+      ],
+      "expected_abstention": false,
+      "model": "gemini-3.5-flash-lite",
+      "runtime_ms": 2842,
+      "response": {
+        "comparable": true,
+        "reason": "The images show the same room from the exact same viewpoint with no obstructions.",
+        "differences": [
+          {
+            "description": "The blue chair has been moved to the right, partially overlapping with the table.",
+            "category": "object_moved",
+            "box_2d": [
+              525,
+              650,
+              792,
+              763
+            ]
+          },
+          {
+            "description": "The brown table has been moved further to the right.",
+            "category": "object_moved",
+            "box_2d": [
+              500,
+              699,
+              749,
+              900
+            ]
+          }
+        ]
+      },
+      "raw_response": {
+        "candidates": [
+          {
+            "content": {
+              "parts": [
+                {
+                  "text": "{\n  \"comparable\": true,\n  \"reason\": \"The images show the same room from the exact same viewpoint with no obstructions.\",\n  \"differences\": [\n    {\n      \"description\": \"The blue chair has been moved to the right, partially overlapping with the table.\",\n      \"category\": \"object_moved\",\n      \"box_2d\": [525, 650, 792, 763]\n    },\n    {\n      \"description\": \"The brown table has been moved further to the right.\",\n      \"category\": \"object_moved\",\n      \"box_2d\": [500, 699, 749, 900]\n    }\n  ]\n}",
+                  "thoughtSignature": "EmAKXgFpFH0TCl/TB2H7/FZakw3N/Z0cDu6lTtXxsQB2FkZOGC8qLxOiQh1ryISWoyeSzZPJ6JRGJOUIL1fNKYkSR+ujt0zc+EJEXwe4lLJWRH+8GnMruiUv5t1TFcDjwNw="
+                }
+              ],
+              "role": "model"
+            },
+            "finishReason": "STOP",
+            "index": 0
+          }
+        ],
+        "usageMetadata": {
+          "promptTokenCount": 2379,
+          "candidatesTokenCount": 169,
+          "totalTokenCount": 2548,
+          "promptTokensDetails": [
+            {
+              "modality": "IMAGE",
+              "tokenCount": 2128
+            },
+            {
+              "modality": "TEXT",
+              "tokenCount": 251
+            }
+          ],
+          "serviceTier": "standard"
+        },
+        "modelVersion": "gemini-3.5-flash-lite",
+        "responseId": "IAfrata5JKHKmNMPh_2pkAs"
+      },
+      "usage": {
+        "promptTokenCount": 2379,
+        "candidatesTokenCount": 169,
+        "totalTokenCount": 2548,
+        "promptTokensDetails": [
+          {
+            "modality": "IMAGE",
+            "tokenCount": 2128
+          },
+          {
+            "modality": "TEXT",
+            "tokenCount": 251
+          }
+        ],
+        "serviceTier": "standard"
+      },
+      "api": "v1beta generateContent",
+      "review": {
+        "meaningful_differences": "Correctly identified chair moved to the right.",
+        "false_positives": "Incorrectly claimed the stationary table moved right. The generated table geometry is identical in both inputs.",
+        "misses": "No intended visible change missed.",
+        "localization": "Chair box corresponds to moved chair in second image. Table box covers a real object but the claimed change is false; rejected for highlighting.",
+        "abstention": "Not required; comparable=true."
+      },
+      "usable_regions_for_diagnostic_review": false
+    },
+    {
+      "id": "04-wall-mark",
+      "input_pair": [
+        "baseline.png",
+        "04-wall-mark.png"
+      ],
+      "expected": "New visible brown mark on back wall near center; cause unknown.",
+      "expected_regions": [
+        [
+          280,
+          570,
+          370,
+          630
+        ]
+      ],
+      "expected_abstention": false,
+      "model": "gemini-3.5-flash-lite",
+      "runtime_ms": 7360,
+      "response": {
+        "comparable": true,
+        "reason": "The images are comparable and show a new mark on the wall.",
+        "differences": [
+          {
+            "description": "A dark zig-zag mark or crack on the wall between the window and the table",
+            "category": "surface_change",
+            "box_2d": [
+              287,
+              574,
+              363,
+              622
+            ]
+          }
+        ]
+      },
+      "raw_response": {
+        "candidates": [
+          {
+            "content": {
+              "parts": [
+                {
+                  "text": "{\n  \"comparable\": true,\n  \"reason\": \"The images are comparable and show a new mark on the wall.\",\n  \"differences\": [\n    {\n      \"description\": \"A dark zig-zag mark or crack on the wall between the window and the table\",\n      \"category\": \"surface_change\",\n      \"box_2d\": [287, 574, 363, 622]\n    }\n  ]\n}",
+                  "thoughtSignature": "EmAKXgFpFH0TGmmQuTpV0ZZ0MBWtluJTpMcCLyKX3S8wTWbaPaChCn3Acu3bD8TmcbCZKrfWwztnD2OYzahakman+WhrqqubUXfL8N9XyoqZCcLIEa+ufv3c41JtUeC+1NE="
+                }
+              ],
+              "role": "model"
+            },
+            "finishReason": "STOP",
+            "index": 0
+          }
+        ],
+        "usageMetadata": {
+          "promptTokenCount": 2379,
+          "candidatesTokenCount": 108,
+          "totalTokenCount": 2487,
+          "promptTokensDetails": [
+            {
+              "modality": "TEXT",
+              "tokenCount": 251
+            },
+            {
+              "modality": "IMAGE",
+              "tokenCount": 2128
+            }
+          ],
+          "serviceTier": "standard"
+        },
+        "modelVersion": "gemini-3.5-flash-lite",
+        "responseId": "IwfratGhG4_dqfkPtcLO8Qc"
+      },
+      "usage": {
+        "promptTokenCount": 2379,
+        "candidatesTokenCount": 108,
+        "totalTokenCount": 2487,
+        "promptTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 251
+          },
+          {
+            "modality": "IMAGE",
+            "tokenCount": 2128
+          }
+        ],
+        "serviceTier": "standard"
+      },
+      "api": "v1beta generateContent",
+      "review": {
+        "meaningful_differences": "Located new central brown wall mark.",
+        "false_positives": "No additional region invented. 'Mark or crack' does not establish an actual crack or cause.",
+        "misses": "No intended visible change missed.",
+        "localization": "Box covers the central wall stroke in the second image; checked at 800x600 and 400x300.",
+        "abstention": "Not required; comparable=true."
+      },
+      "usable_regions_for_diagnostic_review": true
+    },
+    {
+      "id": "05-obstruction",
+      "input_pair": [
+        "baseline.png",
+        "05-obstruction.png"
+      ],
+      "expected": "Abstain: most room surfaces occluded. Do not invent hidden changes.",
+      "expected_regions": [],
+      "expected_abstention": true,
+      "model": "gemini-3.5-flash-lite",
+      "runtime_ms": 5899,
+      "response": {
+        "comparable": false,
+        "reason": "The second image is heavily occluded by a large dark grey rectangle, preventing reliable comparison of the room elements.",
+        "differences": []
+      },
+      "raw_response": {
+        "candidates": [
+          {
+            "content": {
+              "parts": [
+                {
+                  "text": "{\n  \"comparable\": false,\n  \"reason\": \"The second image is heavily occluded by a large dark grey rectangle, preventing reliable comparison of the room elements.\",\n  \"differences\": []\n}",
+                  "thoughtSignature": "EmAKXgFpFH0TX/2o8oDMxGByI1dZHN4slMh2N1WwGJlgZcJfQNLYkkQC8Pu0ZhHHQpcOKFMBAmDAjiV7BcsIFu+A9OfF0helcK/VhgyjfDc/HvfQv9Ugvgqi4QsuYJcwP74="
+                }
+              ],
+              "role": "model"
+            },
+            "finishReason": "STOP",
+            "index": 0
+          }
+        ],
+        "usageMetadata": {
+          "promptTokenCount": 2379,
+          "candidatesTokenCount": 46,
+          "totalTokenCount": 2425,
+          "promptTokensDetails": [
+            {
+              "modality": "IMAGE",
+              "tokenCount": 2128
+            },
+            {
+              "modality": "TEXT",
+              "tokenCount": 251
+            }
+          ],
+          "serviceTier": "standard"
+        },
+        "modelVersion": "gemini-3.5-flash-lite",
+        "responseId": "LgfrapujK_DdqfkPmOqv6A4"
+      },
+      "usage": {
+        "promptTokenCount": 2379,
+        "candidatesTokenCount": 46,
+        "totalTokenCount": 2425,
+        "promptTokensDetails": [
+          {
+            "modality": "IMAGE",
+            "tokenCount": 2128
+          },
+          {
+            "modality": "TEXT",
+            "tokenCount": 251
+          }
+        ],
+        "serviceTier": "standard"
+      },
+      "api": "v1beta generateContent",
+      "review": {
+        "meaningful_differences": "Correctly abstained because most of the room is obscured.",
+        "false_positives": "None; differences array is empty.",
+        "misses": "Not assessable behind obstruction.",
+        "localization": "No box returned; correct for unreliable comparison.",
+        "abstention": "Correct: comparable=false and no invented hidden changes."
+      },
+      "usable_regions_for_diagnostic_review": false
+    },
+    {
+      "id": "06-multiple",
+      "input_pair": [
+        "baseline.png",
+        "06-multiple.png"
+      ],
+      "expected": "Three visible surface changes: brown central wall mark, upper-right wall line, brown floor patch.",
+      "expected_regions": [
+        [
+          280,
+          570,
+          370,
+          630
+        ],
+        [
+          290,
+          780,
+          450,
+          830
+        ],
+        [
+          830,
+          265,
+          905,
+          390
+        ]
+      ],
+      "expected_abstention": false,
+      "model": "gemini-3.5-flash-lite",
+      "runtime_ms": 3770,
+      "response": {
+        "comparable": true,
+        "reason": "The images are comparable with clear visible differences added to the walls and floor in the move-out image.",
+        "differences": [
+          {
+            "description": "A zig-zag crack on the wall above and to the left of the table.",
+            "category": "surface_change",
+            "box_2d": [
+              287,
+              575,
+              363,
+              622
+            ]
+          },
+          {
+            "description": "A vertical zig-zag crack on the wall above the table.",
+            "category": "surface_change",
+            "box_2d": [
+              299,
+              785,
+              436,
+              816
+            ]
+          },
+          {
+            "description": "A dark oval spot or stain on the floor.",
+            "category": "surface_change",
+            "box_2d": [
+              836,
+              268,
+              897,
+              381
+            ]
+          }
+        ]
+      },
+      "raw_response": {
+        "candidates": [
+          {
+            "content": {
+              "parts": [
+                {
+                  "text": "{\n  \"comparable\": true,\n  \"reason\": \"The images are comparable with clear visible differences added to the walls and floor in the move-out image.\",\n  \"differences\": [\n    {\n      \"description\": \"A zig-zag crack on the wall above and to the left of the table.\",\n      \"category\": \"surface_change\",\n      \"box_2d\": [287, 575, 363, 622]\n    },\n    {\n      \"description\": \"A vertical zig-zag crack on the wall above the table.\",\n      \"category\": \"surface_change\",\n      \"box_2d\": [299, 785, 436, 816]\n    },\n    {\n      \"description\": \"A dark oval spot or stain on the floor.\",\n      \"category\": \"surface_change\",\n      \"box_2d\": [836, 268, 897, 381]\n    }\n  ]\n}",
+                  "thoughtSignature": "EmAKXgFpFH0TE9dokG2OyOxSUNcnDs6wZisoGEC74HvkYvghnNeRIOaW3quS5kcUtPn8Fb5bFkhKWt6xxLbGuzjBR4/tdSDKa2Lq0/3LEzTlchxOfTE5nbyx1j0y/KR+HYQ="
+                }
+              ],
+              "role": "model"
+            },
+            "finishReason": "STOP",
+            "index": 0
+          }
+        ],
+        "usageMetadata": {
+          "promptTokenCount": 2379,
+          "candidatesTokenCount": 238,
+          "totalTokenCount": 2617,
+          "promptTokensDetails": [
+            {
+              "modality": "TEXT",
+              "tokenCount": 251
+            },
+            {
+              "modality": "IMAGE",
+              "tokenCount": 2128
+            }
+          ],
+          "serviceTier": "standard"
+        },
+        "modelVersion": "gemini-3.5-flash-lite",
+        "responseId": "MgfraoipDdmLqfkPv--fuQI"
+      },
+      "usage": {
+        "promptTokenCount": 2379,
+        "candidatesTokenCount": 238,
+        "totalTokenCount": 2617,
+        "promptTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 251
+          },
+          {
+            "modality": "IMAGE",
+            "tokenCount": 2128
+          }
+        ],
+        "serviceTier": "standard"
+      },
+      "api": "v1beta generateContent",
+      "review": {
+        "meaningful_differences": "All three intended visible regions found: central brown wall mark, upper-right wall line, floor patch.",
+        "false_positives": "No extra regions. Calling drawn lines 'cracks' overstates what these synthetic images establish.",
+        "misses": "No intended visible region missed.",
+        "localization": "All three boxes correspond to intended second-image regions; checked at 800x600 and 400x300.",
+        "abstention": "Not required; comparable=true."
+      },
+      "usable_regions_for_diagnostic_review": true
+    }
+  ],
+  "recommendation": "description_only_with_human_inspection",
+  "limitations": "Six deterministic illustrations establish an API feasibility smoke test, not real-world accuracy or production localization safety.",
+  "reviewed_on": "2026-11-04"
+}

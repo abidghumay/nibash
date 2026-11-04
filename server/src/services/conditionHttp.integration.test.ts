@@ -1,0 +1,72 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import {existsSync} from "node:fs";
+import {resolve} from "node:path";
+import {readFile} from "node:fs/promises";
+import express from "express";
+import jwt from "jsonwebtoken";
+import sharp from "sharp";
+import {pool} from "../db/pool.js";
+import router from "../routes/contract.route.js";
+import {rentalDatabase} from "./testing/rentalFixtures.js";
+test("authenticated condition HTTP rejects cross-contract and unsafe multipart requests",async t=>{
+ assert.ok(existsSync(resolve(__dirname,"../routes/conditionReport.route.ts")),"condition router must exist");
+ const db=await rentalDatabase();t.after(()=>db.close());
+ await db.exec(await readFile(resolve(__dirname,"../../../db/migrations/021_condition_reports.sql"),"utf8"));
+ const query=async(sql:string,params?:any[])=>db.query(sql,params);
+ const oldQuery=pool.query,oldConnect=pool.connect,oldFetch=globalThis.fetch;
+ pool.query=query as any; pool.connect=(async()=>({query,release(){}})) as any;
+ const objects=new Set<string>();let storageCalls=0;
+ globalThis.fetch=(async(input:any,init?:RequestInit)=>{
+   const url=String(input);
+   if(url.startsWith("https://storage.example/")){
+     storageCalls++;
+     if(url.includes("/bucket/"))return Response.json({public:false});
+     if(init?.method==="POST"&&url.includes("/object/")&&!url.includes("/sign/")){objects.add(url);return Response.json({});}
+     if(url.includes("/object/sign/"))return Response.json({signedURL:url.split("/storage/v1")[1]+"?token=synthetic"});
+     return Response.json({});
+   }
+   return oldFetch(input,init);
+ }) as typeof fetch;
+ process.env.SUPABASE_URL="https://storage.example";process.env.SUPABASE_SERVICE_ROLE_KEY="synthetic-test";process.env.JWT_SECRET="condition-http-synthetic";
+ t.after(()=>{pool.query=oldQuery;pool.connect=oldConnect;globalThis.fetch=oldFetch;});
+ const app=express();app.use(express.json());app.use("/api/contracts",router);
+ const server=app.listen(0);t.after(()=>server.close());await new Promise<void>(r=>server.once("listening",r));
+ const address=server.address();assert.ok(address&&typeof address!=="string");
+ const base="http://127.0.0.1:"+address.port+"/api/contracts/1/condition-report";
+ const headers=(user:number)=>({Authorization:"Bearer "+jwt.sign({id:user,email:"synthetic@example.test"},process.env.JWT_SECRET!)});
+ const request=(user:number,path:string,method="GET",body?:any)=>fetch(base+path,{method,headers:{...headers(user),"Content-Type":"application/json"},body:body===undefined?undefined:JSON.stringify(body)});
+ assert.equal((await fetch(base)).status,401);
+ assert.equal((await request(3,"")).status,403);
+ assert.equal((await request(3,"","POST",{})).status,403);
+ assert.equal(storageCalls,0);
+ let result:any=await(await request(2,"","POST",{})).json();
+ assert.equal(result.report.status,"draft");
+ assert.equal((await request(2,"/rooms","POST",{version:1,name:"Bedroom",unexpected:true})).status,400);
+ result=await(await request(2,"/rooms","POST",{version:1,name:"Bedroom"})).json();
+ const room=result.report.rooms[0].id;
+ const form=(bytes:Uint8Array,mime:string,version=2)=>{
+   const data=new FormData();data.set("version",String(version));data.set("room_id",String(room));data.set("notes","");
+   data.set("photo",new Blob([bytes as any],{type:mime}),"test.png");return data;
+ };
+ const upload=(user:number,data:FormData)=>fetch(base+"/photos",{method:"POST",headers:headers(user),body:data});
+ assert.equal((await upload(3,form(new Uint8Array([1,2]),"image/png"))).status,403);
+ assert.equal((await upload(2,form(new TextEncoder().encode("<html>fake</html>"),"image/png"))).status,400);
+ assert.equal((await upload(2,form(new Uint8Array(8*1024*1024+1),"image/png"))).status,413);
+ assert.equal(storageCalls,0);
+ const image=await sharp({create:{width:128,height:128,channels:3,background:"#ddd"}}).png().toBuffer();
+ const response=await upload(2,form(image,"image/png"));assert.equal(response.status,201);
+ result=await response.json();
+ assert.equal(objects.size,1);
+ const photo=result.report.photos[0].id;
+ const link=await request(1,"/photos/"+photo+"/url");assert.equal(link.status,200);
+ assert.equal(link.headers.get("cache-control"),"private, no-store");
+ const before=storageCalls;assert.equal((await request(3,"/photos/"+photo+"/url")).status,403);assert.equal(storageCalls,before);
+ assert.equal((await request(2,"/photos/"+photo+"/url?path=../../anything")).status,400);
+ assert.equal((await request(2,"/submit","POST",{version:3})).status,200);
+ result=await(await request(2,"")).json();
+ assert.equal((await request(1,"/confirm","POST",{version:3,hash:"a".repeat(64)})).status,409);
+ assert.equal((await request(1,"/confirm","POST",{version:3,hash:result.report.integrity_hash})).status,200);
+ assert.equal((await request(2,"/confirm","POST",{version:3,hash:result.report.integrity_hash})).status,200);
+ assert.equal((await upload(2,form(image,"image/png",3))).status,409);
+});

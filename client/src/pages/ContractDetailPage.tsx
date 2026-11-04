@@ -3,6 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { apiClient } from "../api/client";
 import { useAuth } from "../context/AuthContext";
 import { RentalManagementPanel } from "../components/RentalManagementPanel";
+import { ConditionReportPanel } from "../components/ConditionReportPanel";
 import { ReviewModal, type ReviewData } from "../components/ReviewModal";
 import { DeleteConfirmModal } from "../components/DeleteConfirmModal";
 
@@ -133,6 +134,12 @@ export function ContractDetailPage() {
     } finally {
       setLoading(false);
     }
+  }, [id, token]);
+  const refreshPayments = useCallback(() => {
+    if (!id || !token) return;
+    void apiClient.get<{payments: PaymentRecord[]}>(`/payments/contracts/${id}`)
+      .then(result => setPayments(result.payments || []))
+      .catch(() => setError('Payment records could not refresh. Reload to check the latest balance.'));
   }, [id, token]);
 
   useEffect(() => {
@@ -340,7 +347,8 @@ export function ContractDetailPage() {
         </div>
       </div>
 
-      {id && user && <RentalManagementPanel contractId={id} userId={user.id} />}
+      {id && user && <RentalManagementPanel contractId={id} userId={user.id} onPaymentsChanged={refreshPayments} />}
+      {id && user && <ConditionReportPanel contractId={id} userId={user.id} />}
 
       {/* Main 12-Column Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
@@ -815,7 +823,7 @@ export function ContractDetailPage() {
 
                       <div className="text-xs text-emerald-400 font-mono font-medium self-end sm:self-center flex items-center gap-1">
                         <span className="material-symbols-outlined text-sm">verified</span>
-                        <span>Paid & Verified</span>
+                        <span>{pmt.payment_method === 'Simulated TEST' ? 'Simulated — no money transferred' : pmt.payment_method === 'shurjoPay TEST' ? 'Sandbox TEST — no money transferred' : 'Paid & Verified'}</span>
                       </div>
                     </div>
                   ))}

@@ -1,0 +1,64 @@
+{
+  "recorded_on": "2026-11-04",
+  "timezone": "Asia/Dhaka",
+  "workspace": "C:/Users/Abid/.codex/worktrees/condition-report-phase-one/nibash",
+  "server": {
+    "command": "npm test && npm run build",
+    "tests": 179,
+    "passed": 179,
+    "failed": 0,
+    "build": "passed"
+  },
+  "client": {
+    "command": "npm test && npm run build",
+    "tests": 30,
+    "passed": 30,
+    "failed": 0,
+    "build": "passed",
+    "warnings": [
+      "Existing large JavaScript chunk warning: approximately 735 kB minified."
+    ]
+  },
+  "database": {
+    "engine": "PGlite PostgreSQL",
+    "all_application_migrations": "passed",
+    "condition_bucket_rls": "passed using simulated Supabase storage schema",
+    "remote_migrations_executed": false,
+    "multiple_concurrent_postgresql_sessions_tested": false
+  },
+  "vision": {
+    "model": "gemini-3.5-flash-lite",
+    "api": "v1beta generateContent",
+    "actual_requests": 6,
+    "synthetic_only": true,
+    "total_runtime_ms": 30689,
+    "input_tokens": 14274,
+    "output_tokens": 646,
+    "estimated_usd_at_documented_standard_rates": 0.0058972,
+    "billing_verified": false,
+    "recommendation": "description_only_with_human_inspection"
+  },
+  "browser": {
+    "synthetic_fixture": true,
+    "viewport_width": 615,
+    "document_width": 607,
+    "photo_loaded": true,
+    "review_checkbox_gating": "passed",
+    "locked_state_after_second_confirmation": "passed",
+    "physical_mobile_device_tested": false
+  },
+  "review": {
+    "independent_security_review": "no remaining must-fix findings after fixes",
+    "fixed": [
+      "Lost COMMIT acknowledgement could delete committed image",
+      "Eligibility SELECT snapshot could become stale after lock wait",
+      "Collapsed history previews could exhaust request limit"
+    ]
+  },
+  "deployment": {
+    "deployed": false,
+    "hosted_supabase_tested": false,
+    "production_ai_enabled": false,
+    "retention_job_implemented": false
+  }
+}
