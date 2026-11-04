@@ -1,0 +1,124 @@
+{
+  "bangladesh_release_date": "2026-11-05",
+  "application_commit": "ba002e9f1a6340ca07238c6d486a577ce428d014",
+  "tests": {
+    "server_passed": 202,
+    "client_passed": 32
+  },
+  "builds_passed": true,
+  "backup": {
+    "at": "2026-11-04T19:54:14.970Z",
+    "bytes": 561490,
+    "sha256": "ec5f0884cc40604e3277ab0dbaa693e69099e248707be26e0b413c9451442b5b",
+    "entries": 882
+  },
+  "migrations": [
+    {
+      "name": "022_move_out_inspections.sql",
+      "sha256": "b279686d78f83953875bf158cf69118625b7367d6443b4b02a62d1b219b09ab4"
+    },
+    {
+      "name": "023_condition_analysis_jobs.sql",
+      "sha256": "278f95d64907cac36b6c347bb688ac0b3ba4c329cc99b40aa5896b0497fa9007"
+    }
+  ],
+  "business_records_unchanged": true,
+  "storage": {
+    "at": "2026-11-04T19:55:11.431Z",
+    "input": "Project-generated 128px synthetic PNG; no people/home/identity data",
+    "backend_private_download": true,
+    "signed_download_http": 200,
+    "public_download_http": 400,
+    "bytes": 526,
+    "sha256": "2c1f701d573fa7094b341867772de07dd44dc53fcd67f944a95d8dcd7d99f4a2",
+    "exact_probe_removed": true
+  },
+  "live": {
+    "at": "2026-11-04T19:56:28.696Z",
+    "ref": "ba002e9f1a6340ca07238c6d486a577ce428d014",
+    "database": {
+      "move_out_inspections": 0,
+      "analysis_jobs": 0,
+      "condition_storage_objects": 0,
+      "browser_grants": [],
+      "rls": [
+        {
+          "relname": "condition_analysis_jobs",
+          "relrowsecurity": true
+        },
+        {
+          "relname": "move_out_events",
+          "relrowsecurity": true
+        },
+        {
+          "relname": "move_out_inspections",
+          "relrowsecurity": true
+        },
+        {
+          "relname": "move_out_photos",
+          "relrowsecurity": true
+        },
+        {
+          "relname": "move_out_rooms",
+          "relrowsecurity": true
+        }
+      ]
+    },
+    "github": {
+      "http": 200,
+      "state": "success",
+      "statuses": [
+        {
+          "context": "Vercel",
+          "state": "success",
+          "url": "https://vercel.com/batcave7/nibash/FcuMhtjDqaeiReNSBGoXhaeA1etZ"
+        }
+      ]
+    },
+    "frontend": {
+      "http": 200,
+      "bundles": [
+        {
+          "asset": "/assets/index-BASaZPI5.js",
+          "http": 200,
+          "inspection": true,
+          "consent": true,
+          "production_api": true
+        }
+      ],
+      "ready": true
+    },
+    "health": {
+      "http": 200,
+      "ok": true
+    },
+    "inspection": {
+      "anonymous": 401,
+      "unrelated": 403,
+      "owner": 200,
+      "tenant": 200,
+      "cache": "private, no-store",
+      "cross_party_photo": 403,
+      "missing_photo": 404,
+      "missing_inspection": true,
+      "ai_processing_enabled": false,
+      "ready": true
+    },
+    "existing_workflows": {
+      "statuses": [
+        200,
+        200,
+        200,
+        200,
+        200,
+        200
+      ],
+      "payment_sandbox_enabled": false,
+      "baseline_ai_processing_enabled": false,
+      "ready": true
+    },
+    "ready": true
+  },
+  "real_home_processing_enabled": false,
+  "production_secrets_changed": false
+}

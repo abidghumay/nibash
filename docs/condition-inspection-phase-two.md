@@ -2,6 +2,8 @@
 
 Implemented and evaluated November 4, 2026; final verification resumed November 5, 2026, Bangladesh time. Implementation is local to the existing checkout. No deployment, production migration, production-secret change, or private-home inference was performed.
 
+**Subsequent authorized release:** The owner then requested “push deploy.” Phase 2 was pushed and deployed, migrations 022/023 were applied, and live read/security checks passed. Real-home AI processing remains disabled. See [the production rollout record](condition-inspection-production-rollout.md). The implementation/evaluation account below records the original local completion.
+
 ## Result and scope
 
 The implemented journey is confirmed baseline → matched private move-out photos → durable comparison or manual fallback → landlord physical review → explicit condition acceptance plus independent tenant vacancy → completed inspection and controlled rental closure. A genuine Gemini comparison and both-role browser journey reached completion using authored synthetic evidence. AI never sets liability, calculates money, accepts the condition, confirms vacancy, or releases a listing.
