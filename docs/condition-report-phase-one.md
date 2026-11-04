@@ -2,6 +2,8 @@
 
 Recorded November 4, 2026, Bangladesh time. No deployment, remote migration, real-home inference or real Supabase photo upload was performed.
 
+**Later rollout:** The owner subsequently authorized integration and production deployment. See [the combined condition/payment rollout](condition-payment-production-rollout.md) for the applied migrations, real storage smoke, five PostgreSQL multi-session tests, combined 179-server/31-client validation and deployment evidence. The implementation record below describes the original isolated Phase 1 completion.
+
 Work is preserved in the attached isolated checkout:
 `C:/Users/Abid/.codex/worktrees/condition-report-phase-one/nibash`
 
