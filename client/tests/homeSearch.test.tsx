@@ -23,6 +23,8 @@ test("home search hands text to NLP while preserving ordinary browsing", async t
   const searches: URLSearchParams[] = [];
   let respond!: (response: Response) => void;
   let verifier = false;
+  let heroListings: Record<string, unknown>[] = [];
+  let listingsUnavailable = false;
   globalThis.fetch = (async (input, options) => {
     const url = new URL(String(input));
     if (url.pathname.endsWith("/auth/me")) return Response.json({ user: { id: 1, is_verifier: verifier } });
@@ -39,7 +41,7 @@ test("home search hands text to NLP while preserving ordinary browsing", async t
       return Response.json({ listings: [], nextCursor: null });
     }
     assert.ok(url.pathname.endsWith("/listings"), url.pathname);
-    return Response.json({ listings: [] });
+    return listingsUnavailable ? Response.json({ error: "Unavailable" }, { status: 503 }) : Response.json({ listings: heroListings });
   }) as typeof fetch;
   t.after(async () => { globalThis.fetch = originalFetch; globalThis.FormData = originalFormData; await vite.close(); dom.window.close(); });
   function LocationProbe() {
@@ -75,6 +77,37 @@ test("home search hands text to NLP while preserving ordinary browsing", async t
     await act(async () => { await new Promise(resolve => setTimeout(resolve, 30)); });
   }
   const naturalButton = () => [...container.querySelectorAll("button")].find(button => button.textContent?.startsWith("Natural language"))!;
+
+  await t.test("hero shows three approved database listings with real photos, rents and detail links", async () => {
+    heroListings = [100, 101, 102, 103, 104].map(id => ({
+      id, title: `Database apartment ${id}`, status: id === 100 ? "waiting" : "approved", area_id: 2,
+      bedroom_count: 3, bathroom_count: 2, on_which_floor: 4, rent: "24000.00",
+      images: [{ id, url: `https://example.test/apartment-${id}.jpg` }], rating: null, review_count: 0,
+    }));
+    const root = await mount();
+    try {
+      assert.match(container.textContent!, /Database apartment 101/);
+      assert.doesNotMatch(container.textContent!, /Database apartment 100|Database apartment 104|sqft/);
+      const links = [...container.querySelectorAll('a')].filter(link => link.textContent?.includes("Details"));
+      assert.deepEqual([...new Set(links.map(link => link.getAttribute("href")))].sort(), ["/listings/101", "/listings/102", "/listings/103"]);
+      assert.ok(container.querySelector('img[src="https://example.test/apartment-101.jpg"]'));
+      assert.match(container.textContent!, /24,000/);
+      assert.match(container.textContent!, /Floor 4/);
+    } finally { await act(async () => root.unmount()); heroListings = []; }
+  });
+  await t.test("hero handles no listings and API failure without mock property cards", async () => {
+    for (const unavailable of [false, true]) {
+      listingsUnavailable = unavailable;
+      const root = await mount();
+      try {
+        assert.match(container.textContent!, unavailable ? /Unable to load apartments/ : /No apartments available/);
+        assert.equal(container.querySelector('[aria-label="Next property"]'), null);
+        assert.equal(container.querySelector('[aria-label="Previous property"]'), null);
+        assert.equal(container.querySelectorAll('a[href^="/listings/"]').length, 0);
+      } finally { await act(async () => root.unmount()); }
+    }
+    listingsUnavailable = false;
+  });
 
   for (const query of ["  3 bedrooms under 30k with a lift  ", "ধানমন্ডিতে ৩ বেডরুম ৩০ হাজারের মধ্যে"]) {
     await t.test(`text submission automatically interprets ${query.trim()}`, async () => {

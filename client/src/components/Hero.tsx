@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
-import { mockListings } from "../data/mockListings";
+import { Link, useNavigate } from "react-router-dom";
+import { apiClient } from "../api/client";
+import type { BackendListing } from "../pages/ListingsPage";
+import { getAreaName } from "../utils/areaLookup";
 import { useAreas } from "../context/AreaContext";
 import { BuildathonBadge } from "./BuildathonBadge";
 import { MarketplaceStats } from "./MarketplaceStats";
@@ -14,10 +16,21 @@ export function Hero() {
   const [bedrooms, setBedrooms] = useState("all");
   const [maxRent, setMaxRent] = useState("all");
 
-  // The 3 showcase properties
-  // TODO: Query needed
-  const showcaseItems = mockListings.slice(0, 3);
+  const [showcaseItems, setShowcaseItems] = useState<BackendListing[]>([]);
+  const [listingsLoading, setListingsLoading] = useState(true);
+  const [listingsError, setListingsError] = useState(false);
   const itemCount = showcaseItems.length;
+
+  useEffect(() => {
+    let active = true;
+    apiClient.get<{ listings: BackendListing[] }>("/listings")
+      .then(({ listings }) => {
+        if (active) setShowcaseItems(listings.filter(listing => listing.status === "approved").slice(0, 3));
+      })
+      .catch(() => { if (active) setListingsError(true); })
+      .finally(() => { if (active) setListingsLoading(false); });
+    return () => { active = false; };
+  }, []);
 
   // Unbounded continuous activeIndex that never overflows or disappears
   const [activeIndex, setActiveIndex] = useState(0);
@@ -63,6 +76,7 @@ export function Hero() {
   // Jump to specific dot with shortest slide direction
   const goToSlideIndex = useCallback(
     (targetDotIndex: number) => {
+      if (itemCount < 2) return;
       const currentDot = ((activeIndex % itemCount) + itemCount) % itemCount;
       if (targetDotIndex === currentDot) return;
       let diff = targetDotIndex - currentDot;
@@ -75,12 +89,12 @@ export function Hero() {
 
   // Continuous auto-swipe every 4.5 seconds with rock-solid timer cleanup
   useEffect(() => {
-    if (isPaused) return;
+    if (isPaused || itemCount < 2) return;
     const interval = setInterval(() => {
       goToNext();
     }, 4500);
     return () => clearInterval(interval);
-  }, [isPaused, goToNext]);
+  }, [isPaused, goToNext, itemCount]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -120,10 +134,10 @@ export function Hero() {
   };
 
   // Normalized active index (0, 1, 2) for dots
-  const activeDotIndex = ((activeIndex % itemCount) + itemCount) % itemCount;
+  const activeDotIndex = itemCount ? ((activeIndex % itemCount) + itemCount) % itemCount : 0;
 
   // Stable 7-slot offset window centered around activeIndex: [-3, -2, -1, 0, 1, 2, 3]
-  const windowOffsets = [-3, -2, -1, 0, 1, 2, 3];
+  const windowOffsets = itemCount > 1 ? [-3, -2, -1, 0, 1, 2, 3] : itemCount === 1 ? [0] : [];
 
   return (
     <div className="relative min-h-[92vh] flex items-center justify-center overflow-hidden bg-[#090a0c] pt-8 pb-20">
@@ -339,7 +353,7 @@ export function Hero() {
         <div className="lg:col-span-6 flex flex-col items-center">
           <div className="relative w-full max-w-[560px] sm:max-w-[620px] mx-auto h-[480px] sm:h-[530px] flex items-center justify-center">
             {/* Left Arrow Button (Vertically Centered on Left Side) */}
-            <button
+            {itemCount > 1 && <button
               type="button"
               onClick={goToPrev}
               aria-label="Previous property"
@@ -348,7 +362,7 @@ export function Hero() {
               <span className="material-symbols-outlined text-lg sm:text-xl group-hover:-translate-x-0.5 transition-transform">
                 west
               </span>
-            </button>
+            </button>}
 
             {/* Stable Property Image Carousel Viewport */}
             <div
@@ -358,6 +372,9 @@ export function Hero() {
               onMouseEnter={() => setIsPaused(true)}
               onMouseLeave={() => setIsPaused(false)}
             >
+              {!itemCount && <div role="status" className="h-full flex items-center justify-center text-slate-400">
+                {listingsLoading ? "Loading apartments…" : listingsError ? "Unable to load apartments. Please try again later." : "No apartments available yet."}
+              </div>}
               {/* Subtle edge fade gradient to enhance depth */}
               <div className="pointer-events-none absolute inset-y-0 left-0 w-12 sm:w-16 bg-gradient-to-r from-[#090a0c] via-[#090a0c]/50 to-transparent z-25" />
               <div className="pointer-events-none absolute inset-y-0 right-0 w-12 sm:w-16 bg-gradient-to-l from-[#090a0c] via-[#090a0c]/50 to-transparent z-25" />
@@ -369,6 +386,8 @@ export function Hero() {
                   showcaseItems[((k % itemCount) + itemCount) % itemCount];
                 const isCenter = relOffset === 0;
                 const isVisible = Math.abs(relOffset) <= 1;
+                const imageUrl = listing.images?.[0]?.url || listing.imageUrl;
+                const rent = listing.rent == null ? null : Number(listing.rent);
 
                 return (
                   <div
@@ -404,17 +423,16 @@ export function Hero() {
                     }}
                   >
                     <div className="relative w-full h-full rounded-2xl overflow-hidden group">
-                      <img
-                        src={listing.imageUrl}
+                      <div className="absolute inset-0 flex items-center justify-center bg-[#12151c] text-sm text-slate-400">No photo provided</div>
+                      {imageUrl && <img
+                        src={imageUrl}
                         alt={listing.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                        className="relative w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                         draggable={false}
                         onError={(e) => {
-                          // Fallback to guaranteed Unsplash URL if network fails
-                          e.currentTarget.src =
-                            "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=1200&q=80";
+                          e.currentTarget.style.visibility = "hidden";
                         }}
-                      />
+                      />}
 
                       {/* Dark gradient overlay */}
                       <div className="absolute inset-0 bg-gradient-to-t from-[#090a0c] via-[#090a0c]/25 to-transparent pointer-events-none" />
@@ -426,23 +444,23 @@ export function Hero() {
                             verified
                           </span>
                           <span className="font-label-sm text-[11px] uppercase tracking-wider text-white">
-                            Verified Apartment
+                            Approved Apartment
                           </span>
                         </div>
 
-                        <div className="glass-panel-subtle px-2.5 py-1 rounded-full flex items-center gap-1 border border-white/15 shadow-md">
+                        {Number(listing.review_count) > 0 && listing.rating != null && <div className="glass-panel-subtle px-2.5 py-1 rounded-full flex items-center gap-1 border border-white/15 shadow-md">
                           <span className="text-[#d4b068] text-xs">★</span>
                           <span className="text-xs font-semibold text-white">
                             {listing.rating}
                           </span>
-                        </div>
+                        </div>}
                       </div>
 
                       {/* Bottom Details Overlay */}
                       <div className="absolute bottom-3 left-3 right-3 z-10">
                         <div className="glass-search-bar rounded-xl p-3.5 border border-white/15 backdrop-blur-xl">
                           <div className="text-[11px] text-[#cbd5e1] font-label-sm uppercase tracking-widest mb-0.5">
-                            {listing.propertyType} • {listing.location}
+                            Apartment • {getAreaName(listing.area_id, areas)}
                           </div>
                           <h3 className="text-base sm:text-lg font-medium text-white line-clamp-1 mb-2">
                             {listing.title}
@@ -452,17 +470,17 @@ export function Hero() {
                           <div className="grid grid-cols-3 gap-1.5 py-1.5 border-y border-white/10 text-center mb-2.5">
                             <div>
                               <span className="block text-xs font-semibold text-white">
-                                {listing.beds} Beds
+                                {listing.bedroom_count} Beds
                               </span>
                             </div>
                             <div className="border-x border-white/10">
                               <span className="block text-xs font-semibold text-white">
-                                {listing.baths} Baths
+                                {listing.bathroom_count} Baths
                               </span>
                             </div>
                             <div>
                               <span className="block text-xs font-semibold text-white">
-                                {listing.sqft} sqft
+                                Floor {listing.on_which_floor}
                               </span>
                             </div>
                           </div>
@@ -473,19 +491,19 @@ export function Hero() {
                                 Monthly Rent
                               </span>
                               <div className="text-lg sm:text-xl font-bold text-white">
-                                ৳{listing.price.toLocaleString()}
+                                {rent !== null && Number.isFinite(rent) ? `৳${rent.toLocaleString()}` : "Contact owner"}
                               </div>
                             </div>
 
-                            <a
-                              href="#featured-properties"
+                            <Link
+                              to={`/listings/${listing.id}`}
                               className="glass-button-silver px-3.5 py-1.5 rounded-lg text-xs font-semibold text-[#090a0c] flex items-center gap-1 hover:gap-1.5 transition-all cursor-pointer"
                             >
                               <span>Details</span>
                               <span className="material-symbols-outlined text-sm">
                                 north_east
                               </span>
-                            </a>
+                            </Link>
                           </div>
                         </div>
                       </div>
@@ -496,7 +514,7 @@ export function Hero() {
             </div>
 
             {/* Right Arrow Button (Vertically Centered on Right Side) */}
-            <button
+            {itemCount > 1 && <button
               type="button"
               onClick={goToNext}
               aria-label="Next property"
@@ -505,7 +523,7 @@ export function Hero() {
               <span className="material-symbols-outlined text-lg sm:text-xl group-hover:translate-x-0.5 transition-transform">
                 east
               </span>
-            </button>
+            </button>}
           </div>
 
           {/* Indicator Dots Below Images (Clean 3 dots for the 3 apartments, NO arrows below) */}
