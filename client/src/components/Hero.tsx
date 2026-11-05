@@ -26,7 +26,7 @@ export function Hero() {
     apiClient.get<{ listings: BackendListing[] }>("/listings")
       .then(({ listings }) => {
         if (active) setShowcaseItems(listings
-          .filter(listing => listing.status === "approved")
+          .filter(listing => listing.status === "approved" && Number.isFinite(Number(listing.rent)) && Number(listing.rent) > 40000)
           .sort((a, b) => Number(b.id) - Number(a.id))
           .slice(0, 3));
       })

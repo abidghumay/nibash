@@ -78,20 +78,21 @@ test("home search hands text to NLP while preserving ordinary browsing", async t
   }
   const naturalButton = () => [...container.querySelectorAll("button")].find(button => button.textContent?.startsWith("Natural language"))!;
 
-  await t.test("hero shows the three newest approved database listings with real photos, rents and detail links", async () => {
-    heroListings = [100, 101, 102, 103, 104].map(id => ({
+  await t.test("hero shows the three newest approved listings with rent strictly above 40000", async () => {
+    heroListings = [100, 101, 102, 103, 104, 105, 106, 107, 108].map(id => ({
       id, title: `Database apartment ${id}`, status: id === 100 ? "waiting" : "approved", area_id: 2,
-      bedroom_count: 3, bathroom_count: 2, on_which_floor: 4, rent: "24000.00",
+      bedroom_count: 3, bathroom_count: 2, on_which_floor: 4,
+      rent: id === 105 ? "39999" : id === 106 ? "40000" : id === 107 ? null : id === 108 ? "invalid" : "75000.00",
       images: [{ id, url: `https://example.test/apartment-${id}.jpg` }], rating: null, review_count: 0,
     }));
     const root = await mount();
     try {
       assert.match(container.textContent!, /Database apartment 104/);
-      assert.doesNotMatch(container.textContent!, /Database apartment 100|Database apartment 101|sqft/);
+      assert.doesNotMatch(container.textContent!, /Database apartment 10[015678]|sqft/);
       const links = [...container.querySelectorAll('a')].filter(link => link.textContent?.includes("Details"));
       assert.deepEqual([...new Set(links.map(link => link.getAttribute("href")))].sort(), ["/listings/102", "/listings/103", "/listings/104"]);
       assert.ok(container.querySelector('img[src="https://example.test/apartment-104.jpg"]'));
-      assert.match(container.textContent!, /24,000/);
+      assert.match(container.textContent!, /75,000/);
       assert.match(container.textContent!, /Floor 4/);
     } finally { await act(async () => root.unmount()); heroListings = []; }
   });
