@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { BuildathonBadge } from "./BuildathonBadge";
 
 export function AboutUsSection() {
   return (
@@ -21,22 +22,25 @@ export function AboutUsSection() {
             </div>
 
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-light text-[#f8f9fa] tracking-tight leading-[1.15]">
-              Redefining Urban Renting with{" "}
+              Built as a Team Project.{" "}
               <span className="font-serif italic font-normal text-silver-gradient-text block sm:inline">
-                Integrity & Precision.
+                Improved for This Hackathon.
               </span>
             </h2>
 
             <p className="text-sm md:text-base text-[#94a3b8] leading-relaxed max-w-2xl font-normal">
-              Nibash was conceived and engineered to resolve Bangladesh&apos;s fragmented residential rental landscape.
-              By bridging physical verification, verified ownership records, and legally-binding digital tenancy contracts,
-              we eliminate the ambiguity of traditional leases.
+              Nibash originally started as a team project by Abid Hossain and Kazi Md Raiyan,
+              built to make apartment discovery, property verification, and rental management
+              simpler in Bangladesh.
             </p>
 
             <p className="text-sm md:text-base text-[#94a3b8] leading-relaxed max-w-2xl font-normal">
-              Built from the ground up with modern engineering standards, our platform ensures every apartment listing,
-              payment schedule, and tenant agreement is authentic, traceable, and secure.
+              This existing team project has since been improved for the Ostad presents YUNet
+              AIgnite Buildathon 2026, with AI-powered apartment search, AI-assisted move-out
+              comparisons, and simulated payment workflows added for the hackathon.
             </p>
+
+            <BuildathonBadge className="w-full max-w-[360px]" />
 
             <div className="pt-2 flex flex-wrap items-center gap-4">
               <Link

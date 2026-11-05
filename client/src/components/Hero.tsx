@@ -25,7 +25,10 @@ export function Hero() {
     let active = true;
     apiClient.get<{ listings: BackendListing[] }>("/listings")
       .then(({ listings }) => {
-        if (active) setShowcaseItems(listings.filter(listing => listing.status === "approved").slice(0, 3));
+        if (active) setShowcaseItems(listings
+          .filter(listing => listing.status === "approved")
+          .sort((a, b) => Number(b.id) - Number(a.id))
+          .slice(0, 3));
       })
       .catch(() => { if (active) setListingsError(true); })
       .finally(() => { if (active) setListingsLoading(false); });

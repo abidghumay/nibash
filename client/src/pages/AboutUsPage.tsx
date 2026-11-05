@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import abidPhoto from "../assets/developers/abid-hossain.jpg";
 import raiyanPhoto from "../assets/developers/kazi-md-raiyan.jpg";
 import teamWorkingPhoto from "../assets/developers/team-working.jpg";
+import { BuildathonBadge } from "../components/BuildathonBadge";
 
 interface Developer {
   name: string;
@@ -63,13 +64,17 @@ export function AboutUsPage() {
             {/* Right Narrative Paragraphs */}
             <div className="md:col-span-9 space-y-6 text-[#94a3b8] text-sm sm:text-base md:text-lg leading-relaxed font-normal">
               <p>
-                Built by two software engineers who believe finding a home
-                shouldn't feel like solving a mystery. Nibash brings together
-                smart technology, beautiful design, and verified listings to
-                make renting simpler, safer, and a little more enjoyable.
-                Tenants find spaces they can trust, while owners get transparent
-                tools to manage their properties with confidence.
+                Nibash originally started as a team project by Abid Hossain and
+                Kazi Md Raiyan, built to make apartment discovery, property
+                verification, and rental management simpler in Bangladesh.
               </p>
+              <p>
+                This existing team project has since been improved for the Ostad
+                presents YUNet AIgnite Buildathon 2026. The hackathon improvements
+                include AI-powered apartment search, AI-assisted move-out
+                comparisons, and simulated payment workflows.
+              </p>
+              <BuildathonBadge className="w-full max-w-[360px]" />
             </div>
           </div>
         </section>
