@@ -11,15 +11,24 @@ export function minorUnits(value: unknown): bigint {
 }
 export function sandboxConfig(env: NodeJS.ProcessEnv = process.env) {
   const enabled = env.PAYMENT_SANDBOX_ENABLED === "true";
-  if (enabled && !["development", "test"].includes(env.NODE_ENV ?? ""))
+  const demoMode = env.NIBASH_DEMO_MODE === "true";
+  const provider =
+    env.PAYMENT_SANDBOX_PROVIDER ?? (demoMode ? "simulated" : "shurjopay-sandbox");
+  if (enabled && demoMode && provider !== "simulated")
+    throw new Error("Student demo payments require the simulated provider");
+  if (
+    enabled &&
+    !["development", "test"].includes(env.NODE_ENV ?? "") &&
+    !(env.NODE_ENV === "production" && demoMode && provider === "simulated")
+  )
     throw new Error(
-      "Sandbox payments require explicit development/test NODE_ENV",
+      "Hosted sandbox payments require explicit NIBASH_DEMO_MODE and the simulated provider",
     );
-  const provider = env.PAYMENT_SANDBOX_PROVIDER ?? "shurjopay-sandbox";
   if (enabled && !["shurjopay-sandbox", "simulated"].includes(provider))
     throw new Error("Unsupported test provider");
   return {
     enabled,
+    demoMode,
     provider,
     username: env.SHURJOPAY_SANDBOX_USERNAME,
     password: env.SHURJOPAY_SANDBOX_PASSWORD,

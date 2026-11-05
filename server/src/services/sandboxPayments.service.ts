@@ -23,9 +23,9 @@ export async function listSandboxAttempts(userId: number, paymentId: string) {
   requireSandbox();
   const allowed = await pool.query(
     `SELECT p.id FROM payments p JOIN contracts c ON c.id=p.contract_id
-    JOIN listings l ON l.id=c.listing_id JOIN sandbox_contracts s ON s.contract_id=c.id
-    WHERE p.id=$1 AND (c.tenant_id=$2 OR l.owner_id=$2)`,
-    [paymentId, userId],
+    JOIN listings l ON l.id=c.listing_id LEFT JOIN sandbox_contracts s ON s.contract_id=c.id
+    WHERE p.id=$1 AND (c.tenant_id=$2 OR l.owner_id=$2) AND (s.contract_id IS NOT NULL OR $3::boolean)`,
+    [paymentId, userId, sandboxConfig().demoMode],
   );
   if (!allowed.rows.length)
     throw new AppError(403, "Not authorized for this synthetic payment");
@@ -53,6 +53,13 @@ export async function initiateSandbox(
       JOIN payments p ON p.contract_id=c.id WHERE p.id=$1 FOR UPDATE OF root`,
       [paymentId],
     );
+    if (sandboxConfig().demoMode)
+      await client.query(
+        `INSERT INTO sandbox_contracts(contract_id)
+        SELECT c.id FROM contracts c JOIN payments p ON p.contract_id=c.id
+        WHERE p.id=$1 AND c.tenant_id=$2 ON CONFLICT DO NOTHING`,
+        [paymentId, userId],
+      );
     const found = await client.query(
       `SELECT p.id,p.status,p.category,rental_outstanding(p.id)::text AS remaining
       FROM payments p JOIN contracts c ON c.id=p.contract_id JOIN sandbox_contracts s ON s.contract_id=c.id

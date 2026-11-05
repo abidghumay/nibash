@@ -96,10 +96,11 @@ export async function rentalDetails(user: number, id: string) {
     (SELECT id FROM contracts WHERE coalesce(root_contract_id,id)=$2) ORDER BY id DESC LIMIT 30`,
     [user, root.rows[0].id],
   );
+  const sandbox = sandboxConfig();
   return {
     contract,
-    payment_sandbox: sandboxConfig().enabled && (await pool.query('SELECT 1 FROM sandbox_contracts WHERE contract_id=$1',[id])).rows.length > 0,
-    payment_sandbox_provider: sandboxConfig().enabled ? sandboxConfig().provider : undefined,
+    payment_sandbox: sandbox.enabled && (sandbox.demoMode || (await pool.query('SELECT 1 FROM sandbox_contracts WHERE contract_id=$1',[id])).rows.length > 0),
+    payment_sandbox_provider: sandbox.enabled ? sandbox.provider : undefined,
     payments,
     revisions: revisions.rows,
     documents: documents.rows,

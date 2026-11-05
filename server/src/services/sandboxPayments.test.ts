@@ -12,7 +12,7 @@ test("BDT comparison is exact, accepts provider zero padding, rejects fractional
   for (const value of ["1.001", "-1", "1e2", "NaN", "Infinity"])
     assert.throws(() => minorUnits(value));
 });
-test("sandbox requires explicit non-production opt-in", () => {
+test("sandbox stays disabled by default and requires explicit deployment opt-in", () => {
   assert.equal(sandboxConfig({}).enabled, false);
   assert.throws(() =>
     sandboxConfig({ NODE_ENV: "production", PAYMENT_SANDBOX_ENABLED: "true" }),
@@ -32,6 +32,21 @@ test("sandbox requires explicit non-production opt-in", () => {
       PAYMENT_SANDBOX_PROVIDER: "live",
     }),
   );
+});
+test("hosted student demo explicitly permits simulated payments only", () => {
+  const env = {
+    NODE_ENV: "production",
+    NIBASH_DEMO_MODE: "true",
+    PAYMENT_SANDBOX_ENABLED: "true",
+    PAYMENT_SANDBOX_PROVIDER: "simulated",
+  };
+  assert.equal(sandboxConfig(env).enabled, true);
+  for (const provider of ["shurjopay-sandbox", "live", ""]) {
+    assert.throws(() => sandboxConfig({ ...env, PAYMENT_SANDBOX_PROVIDER: provider }));
+  }
+  assert.throws(() => sandboxConfig({ ...env, NIBASH_DEMO_MODE: "false" }));
+  assert.throws(() => sandboxConfig({ ...env, NODE_ENV: "unknown" }));
+  assert.equal(sandboxConfig({ ...env, PAYMENT_SANDBOX_ENABLED: "false" }).enabled, false);
 });
 test("provider verification binds transaction, merchant order, BDT, amount and status", () => {
   const attempt = {

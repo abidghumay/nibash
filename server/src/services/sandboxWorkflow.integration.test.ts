@@ -377,6 +377,52 @@ test("isolated simulated provider, HTTP authorization, durable worker and existi
       assert.equal((await state(a.id)).state, "succeeded");
     },
   );
+  await t.test("hosted demo exposes checkout and enrolls only the requesting tenant's contract", async (t) => {
+    const previousDemo = process.env.NIBASH_DEMO_MODE;
+    process.env.NIBASH_DEMO_MODE = "true";
+    process.env.NODE_ENV = "production";
+    t.after(() => {
+      process.env.NODE_ENV = "test";
+      if (previousDemo === undefined) delete process.env.NIBASH_DEMO_MODE;
+      else process.env.NIBASH_DEMO_MODE = previousDemo;
+    });
+    const demoContract = await proposed(db, 3);
+    await db.query("UPDATE contracts SET status='signed' WHERE id=$1", [demoContract]);
+    const p = String((await db.query<{ id: number }>(
+      "INSERT INTO payments(contract_id,amount) VALUES($1,100) RETURNING id", [demoContract],
+    )).rows[0].id);
+    const enrolled = async () => (await db.query(
+      "SELECT 1 FROM sandbox_contracts WHERE contract_id=$1", [demoContract],
+    )).rows.length;
+    const details = await request(2, `rental/contracts/${demoContract}`);
+    assert.equal(details.status, 200);
+    const data = await details.json();
+    assert.equal(data.payment_sandbox, true);
+    assert.equal(data.payment_sandbox_provider, "simulated");
+    for (const actor of [1, 2]) {
+      const list = await request(actor, `payment-sandbox/payments/${p}`);
+      assert.equal(list.status, 200);
+      assert.deepEqual((await list.json()).attempts, []);
+    }
+    assert.equal((await request(3, `payment-sandbox/payments/${p}`)).status, 403);
+    for (const actor of [1, 3])
+      assert.equal((await request(actor, `payment-sandbox/payments/${p}`, "POST", {})).status, 403);
+    assert.equal(await enrolled(), 0);
+    const started = await request(2, `payment-sandbox/payments/${p}`, "POST", {});
+    assert.equal(started.status, 202);
+    const attempt = await started.json();
+    assert.equal(await enrolled(), 1);
+    await completeSimulation(2, attempt.id, "succeeded", 2);
+    await ready(attempt.id);
+    for (let n = 0; n < 20 && (await state(attempt.id)).state === "pending"; n++)
+      await processOneSandboxAttempt();
+    assert.equal((await state(attempt.id)).state, "succeeded");
+    assert.equal(await balance(p), "0");
+    const event = (await db.query<{ method: string }>(
+      "SELECT method FROM payment_events WHERE payment_id=$1", [p],
+    )).rows[0];
+    assert.equal(event.method, "Simulated TEST");
+  });
   await t.test(
     "receipt failure recovers without changing confirmed money and unrelated owners cannot download",
     async () => {

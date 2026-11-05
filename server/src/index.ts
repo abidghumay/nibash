@@ -25,7 +25,7 @@ import { startSandboxPaymentWorker } from './services/sandboxPayments.service.js
 import { sandboxConfig } from './services/shurjoPaySandbox.js';
 
 dotenv.config();
-sandboxConfig(); // Fail closed before listening if sandbox is enabled in production.
+sandboxConfig(); // Validate hosted demo opt-in and test provider before listening.
 
 const app = express();
 app.use(cors());
